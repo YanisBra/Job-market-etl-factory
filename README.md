@@ -1,93 +1,224 @@
 # job-market-etl-factory
 
+Pipeline data local pour analyser le marche de l'emploi data.
 
+Stack:
+- Orchestration: Airflow
+- Data Lake: MinIO
+- Base SQL: Postgres
+- Monitoring: Prometheus + Grafana
+- Ingestion API: France Travail
+- Ingestion Scraping: Welcome To The Jungle (WTTJ)
 
-## Getting started
+## 1) Arborescence
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
+```text
+.
+├── airflow/
+│   └── dags/
+│       ├── france_travail_raw_ingestion_dag.py
+│       ├── wttj_raw_ingestion_dag.py
+│       └── job_market_etl_pipeline_dag.py
+├── data/
+│   └── raw/
+├── docker-compose.yaml
+├── requirements.txt
+├── .env.example
+├── src/
+│   ├── france_travail_collector.py
+│   └── welcome_to_the_jungle_scraper.py
+└── tests/
+    ├── test_france_travail_collector.py
+    └── test_welcome_to_the_jungle_scraper.py
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/yanis-brahimi/job-market-etl-factory.git
-git branch -M main
-git push -uf origin main
+
+## 2) Prerequis
+
+- Docker + Docker Compose
+- Python 3.9+ (local)
+- Acces API France Travail (client_id + client_secret)
+
+## 3) Environnement local Python (venv)
+
+Le venv est recommande pour eviter les conflits de dependances.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-## Integrate with your tools
+Ensuite, utilise toujours:
+- `.venv/bin/python ...`
+- ou active le venv avec `source .venv/bin/activate`
 
-* [Set up project integrations](https://gitlab.com/yanis-brahimi/job-market-etl-factory/-/settings/integrations)
+## 4) Configuration `.env`
 
-## Collaborate with your team
+Le projet lit automatiquement le fichier `.env`.
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+Copie d'abord le template reproductible:
 
-## Test and Deploy
+```bash
+cp .env.example .env
+```
 
-Use the built-in continuous integration in GitLab.
+Variables critiques:
+- MinIO: `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `MINIO_BUCKET_RAW_API`, `MINIO_BUCKET_RAW_SCRAP`
+- France Travail: `FRANCE_TRAVAIL_CLIENT_ID`, `FRANCE_TRAVAIL_CLIENT_SECRET`
+- Airflow: `AIRFLOW_*`
+- Postgres: `POSTGRES_*`
+- Airflow deps: `AIRFLOW_ADDITIONAL_REQUIREMENTS` (par defaut: `minio`)
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+Buckets MinIO utilises (noms actuels):
+- API France Travail: `raw-api`
+- Scraping WTTJ: `raw-scrap`
 
-***
+Important securite:
+- Ne jamais commit des credentials reels.
+- Utilise un `.env` local et rotate les secrets si exposes.
 
-# Editing this README
+## 5) Lancer l'infrastructure (reproductible)
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+```bash
+docker compose up -d
+```
 
-## Suggestions for a good README
+Verifier:
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+```bash
+docker compose ps
+```
 
-## Name
-Choose a self-explaining name for your project.
+Arreter:
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+```bash
+docker compose down
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+Reset complet (volumes supprimes):
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+```bash
+docker compose down -v
+```
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+## 6) URLs des services
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+- Airflow: [http://localhost:8088](http://localhost:8088)
+- MinIO Console: [http://localhost:9001](http://localhost:9001)
+- MinIO API: [http://localhost:9000](http://localhost:9000)
+- Prometheus: [http://localhost:9090](http://localhost:9090)
+- Grafana: [http://localhost:3000](http://localhost:3000)
+- Postgres: `localhost:5433`
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+## 7) Ingestion locale (sans Airflow)
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+### 7.1 France Travail -> `raw-api`
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+```bash
+.venv/bin/python src/france_travail_collector.py \
+  --keywords "data scientist" \
+  --location "75" \
+  --range "0-49"
+```
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+Sorties:
+- Fichier local: `data/raw/france_travail_offers.json`
+- MinIO: `raw-api/france_travail/YYYY/MM/DD/offers_<timestamp>.json`
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+Mode debug local sans upload MinIO:
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+```bash
+.venv/bin/python src/france_travail_collector.py --skip-minio
+```
 
-## License
-For open source projects, say how it is licensed.
+### 7.2 WTTJ -> `raw-scrap`
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+```bash
+.venv/bin/python src/welcome_to_the_jungle_scraper.py \
+  --query "data scientist" \
+  --page 1 \
+  --max-pages 1 \
+  --detail-delay-seconds 0.1
+```
+
+Sorties:
+- Fichier local: `data/raw/wttj_offers.json`
+- MinIO: `raw-scrap/welcome_to_the_jungle/YYYY/MM/DD/offers_<timestamp>.json`
+
+Mode debug local sans upload MinIO:
+
+```bash
+.venv/bin/python src/welcome_to_the_jungle_scraper.py --skip-minio
+```
+
+## 8) Airflow DAGs
+
+DAGs ingestion actifs:
+- `france_travail_raw_ingestion`
+- `wttj_raw_ingestion`
+
+DAG ETL (placeholder pour la suite):
+- `job_market_etl_pipeline`
+
+Notes:
+- Les DAGs ingestion executent directement les scripts de `src/` via `BashOperator`.
+- Les variables sont injectees via `docker-compose` (pas besoin de Airflow Variables UI pour ingestion).
+
+## 9) Lancer et verifier un run Airflow
+
+1. Ouvrir Airflow UI et activer les DAGs (`toggle ON`).
+2. Trigger manuel du DAG (bouton Play).
+3. Verifier les tasks en `success` dans Grid/Graph.
+4. Verifier les objets dans MinIO (`raw-api` et `raw-scrap`).
+
+Exemple verification CLI:
+
+```bash
+docker compose exec -T airflow-scheduler airflow dags list
+docker compose exec -T airflow-scheduler airflow tasks states-for-dag-run france_travail_raw_ingestion <dag_run_id>
+docker compose exec -T airflow-scheduler airflow tasks states-for-dag-run wttj_raw_ingestion <dag_run_id>
+```
+
+## 10) Tests
+
+Lancer tous les tests:
+
+```bash
+.venv/bin/python -m pytest -q
+```
+
+Couverture actuelle:
+- Parsing France Travail
+- Upload MinIO mocke France Travail
+- Parsing/enrichissement WTTJ
+- Champs `salaire`, `experienceRequise`, `niveauEtude`
+- Collecte WTTJ multi-pages + dedup
+
+## 11) CI GitLab (build + test)
+
+Pipeline dans `.gitlab-ci.yml`:
+- validation compose
+- quality (`ruff`, `black --check`)
+- tests (`pytest`)
+
+## 12) Troubleshooting rapide
+
+### Aucun DAG visible dans Airflow UI
+
+```bash
+docker compose exec -T airflow-scheduler airflow dags list
+docker compose exec -T airflow-webserver airflow sync-perm
+docker compose restart airflow-webserver airflow-scheduler
+```
+
+### Task Airflow en echec
+
+- Ouvrir les logs de la task dans l'UI.
+- Verifier credentials dans `.env`.
+- Verifier que MinIO est up: `docker compose ps`.
+
+### MinIO ne montre pas le fichier attendu
+
+- France Travail ecrit dans `raw-api`.
+- WTTJ ecrit dans `raw-scrap`.
