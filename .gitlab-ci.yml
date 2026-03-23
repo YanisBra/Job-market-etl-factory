@@ -1,61 +1,61 @@
-# stages:
-#   - build
-#   - test
-
-# variables:
-#   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-
-# cache:
-#   key: "$CI_COMMIT_REF_SLUG"
-#   paths:
-#     - .cache/pip
-
-# default:
-#   image: python:3.12-slim
-#   before_script:
-#     - python -m pip install --upgrade pip
-#     - pip install -r requirements.txt
-
-# build:quality:
-#   stage: build
-#   rules:
-#     - exists:
-#         - src/**/*.py
-#         - tests/**/*.py
-#         - airflow/dags/*.py
-#   script:
-#     - ruff check src tests airflow/dags
-#     - black --check src tests airflow/dags
-#     - python -m py_compile src/*.py airflow/dags/*.py
-
-# test:pytest:
-#   stage: test
-#   rules:
-#     - exists:
-#         - tests/**/*.py
-#   script:
-#     - pytest -q
-
 stages:
   - build
   - test
 
-before_script:
-  - $env:PYTHON_PATH="C:\Users\hp\AppData\Local\Programs\Python\Python311\python.exe"
-  - "& $env:PYTHON_PATH -m pip install --upgrade pip"
-  - "& $env:PYTHON_PATH -m pip install -r requirements.txt"
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
-build_job:
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - .cache/pip
+
+default:
+  image: python:3.12-slim
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install -r requirements.txt
+
+build:quality:
   stage: build
-  tags:
-    - windows
+  rules:
+    - exists:
+        - src/**/*.py
+        - tests/**/*.py
+        - airflow/dags/*.py
   script:
-    - echo "Build du projet"
+    - ruff check src tests airflow/dags
+    - black --check src tests airflow/dags
+    - python -m py_compile src/*.py airflow/dags/*.py
 
-test_api_job:
+test:pytest:
   stage: test
-  tags:
-    - windows
+  rules:
+    - exists:
+        - tests/**/*.py
   script:
-    - echo "Test API Velib"
-    - "& $env:PYTHON_PATH tests/test_france_travail_collector.py"
+    - pytest -q
+
+# stages:
+#   - build
+#   - test
+
+# before_script:
+#   - $env:PYTHON_PATH="C:\Users\hp\AppData\Local\Programs\Python\Python311\python.exe"
+#   - "& $env:PYTHON_PATH -m pip install --upgrade pip"
+#   - "& $env:PYTHON_PATH -m pip install -r requirements.txt"
+
+# build_job:
+#   stage: build
+#   tags:
+#     - windows
+#   script:
+#     - echo "Build du projet"
+
+# test_api_job:
+#   stage: test
+#   tags:
+#     - windows
+#   script:
+#     - echo "Test API Velib"
+#     - "& $env:PYTHON_PATH tests/test_france_travail_collector.py"

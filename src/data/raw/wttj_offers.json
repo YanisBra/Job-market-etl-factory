@@ -1,6 +1,6 @@
 {
   "source": "welcome_to_the_jungle",
-  "collected_at_utc": "2026-03-23T14:16:26.647884+00:00",
+  "collected_at_utc": "2026-03-23T15:00:21.161225+00:00",
   "query": {
     "query": "",
     "page": 1,
@@ -8,6 +8,36 @@
   },
   "total": 30,
   "offers": [
+    {
+      "id": "WTTJ_E3043179",
+      "intitule": "Stage - Chargé.e de Communication Digitale",
+      "description": "Matera recherche un(e) Social Media Manager en stage ! Matera développe un média autour des enjeux du logement. Notre ambition est de réaliser des contenus pédagogiques, inspirants et engagés. À travers nos articles, vidéos et reportages, nous voulons donner des clés de compréhension aux propriétaires tout en mettant en avant des initiatives innovantes via des interviews et témoignages. Intégré(e) à l’équipe Brand, tu seras en charge de la gestion opérationnelle de nos réseaux sociaux et de la bonne diffusion des contenus du média. Tu joueras un rôle clé dans la régularité de notre présence en ligne, le suivi de nos performances et l’animation de notre communauté. Missions : Gérer le planning éditorial et veiller à la bonne mise en ligne des contenus sur l’ensemble de nos canaux (Instagram, YouTube, Youtube Shorts, Tiktok, site internet) Être en charge de A à Z de notre stratégie de contenus Tiktok : idéation, tournage, incarnation face caméra, mise en place des micro-trottoirs, montage, etc. Programmer et publier les contenus, y compris le partage en stories Être en charge de A à Z de notre stratégie de contenus LinkedIn, à la fois sur la page entreprise mais également sur le programme d’employee advocacy des Materanis Suivre et analyser les performances des publications (reach, engagement, croissance) et proposer des optimisations Gérer et répondre aux avis Google Modérer les commentaires et messages sur l’ensemble des plateformes Participer à la rédaction de nos newsletters clients Participer et coordonner nos vidéos témoignages clients Les avantages : La base : Tickets resto (Swile) - pris en charge à 50% Prise en charge des transports à 50% 1/2 jour de congé payé par mois Autres : 2 semaines d’Onboarding pour te faire découvrir le monde de la copropriété et le fonctionnement de Matera Un suivi hebdomadaire par ta Manager Un ordinateur et équipements te seront fournis Détails : Locaux : 8 Cité Paradis 75010, Paris Type de contrat : Stage de 6 mois conventionné Début : Juillet 2026 Télétravail : à discuter avec ta Manager Salaire : 1000 € - 1200 €",
+      "dateCreation": "2026-03-23T14:33:47Z",
+      "lieuTravail": {
+        "libelle": "Paris (FR)",
+        "codePostal": "75010",
+        "commune": "Paris"
+      },
+      "entreprise": {
+        "nom": "Matera"
+      },
+      "typeContrat": "Stage",
+      "typeContratLibelle": "Stage",
+      "salaire": {
+        "libelle": "1000-1200 EUR YEARLY",
+        "min": 1000,
+        "max": 1200,
+        "devise": "EUR",
+        "unite": "YEARLY"
+      },
+      "experienceRequise": "6 mois",
+      "niveauEtude": "Bac+3",
+      "origineOffre": {
+        "origine": "2",
+        "urlOrigine": "https://www.welcometothejungle.com/fr/companies/matera/jobs/stage-charge-e-de-communication-digitale_paris"
+      },
+      "source": "welcome_to_the_jungle"
+    },
     {
       "id": "WTTJ_67CB47F9",
       "intitule": "Alternance Chargé(e) de communication interne F/H",
@@ -101,6 +131,30 @@
       "origineOffre": {
         "origine": "2",
         "urlOrigine": "https://www.welcometothejungle.com/fr/companies/axa/jobs/communication-specialist-h-f_paris"
+      },
+      "source": "welcome_to_the_jungle"
+    },
+    {
+      "id": "WTTJ_680BF696",
+      "intitule": "CHARGE DE COMMUNICATION [Statut Militaire]",
+      "description": "Missions · Vous mènerez des actions de communication pour la cyberdéfense militaire, en interne et en externe. Par vos actions, vous participerez à l’animation et à la fidélisation des cybercombattants, à l’attractivité du COMCYBER et au rayonnement de la cyberdéfense au sein du ministère des Armées et auprès du grand public ; · Vous participerez à l’élaboration de la stratégie de communication et à sa déclinaison en actions concrètes : gestion des relations presse, événementiel, présences numériques; · Vous piloterez des projets de communication à 360° (gestion de projet, création, éditorial, etc.) ; · Vous serez amené(e) à communiquer sur des opérations fortes du COMCYBER comme : DEFNET (exercice de cyberdéfense des Armées), Locked Shield (exercice international de l’OTAN), Passe ton hack d’abord (challenge cyber pour les lycéens), Cyber Humanum Est et DEFHACK (exercices auprès des étudiants), ou encore l’European Cyber Week (salon pour les étudiants et professionnels).",
+      "dateCreation": "2026-03-23T14:40:18Z",
+      "lieuTravail": {
+        "libelle": "Saint-Jacques-de-la-Lande (FR)",
+        "codePostal": "35136",
+        "commune": "Saint-Jacques-de-la-Lande"
+      },
+      "entreprise": {
+        "nom": "Commandement de la Cyberdéfense (COMCYBER)"
+      },
+      "typeContrat": "CDD",
+      "typeContratLibelle": "CDD",
+      "salaire": null,
+      "experienceRequise": "48 mois (~4 ans)",
+      "niveauEtude": "Bac+2",
+      "origineOffre": {
+        "origine": "2",
+        "urlOrigine": "https://www.welcometothejungle.com/fr/companies/commandement-de-la-cyberdefense-comcyber/jobs/charge-de-communication-statut-militaire_saint-jacques-de-la-lande"
       },
       "source": "welcome_to_the_jungle"
     },
@@ -269,6 +323,30 @@
       "origineOffre": {
         "origine": "2",
         "urlOrigine": "https://www.welcometothejungle.com/fr/companies/abeille-assurances-aema-groupe/jobs/alternance-assistant-communication-f-h_bois-colombes_AAAG_oD64mJO"
+      },
+      "source": "welcome_to_the_jungle"
+    },
+    {
+      "id": "WTTJ_FFA928CD",
+      "intitule": "STAGIAIRE CHARGE.E DE COMMUNICATION NUMERIQUE F/H",
+      "description": "Mission : 1. Gestion et optimisation de la chaîne YouTube Citeo Réaliser un inventaire exhaustif des vidéos hébergées sur la chaîne. Gérer la coordination avec l’agence pour définir : les règles de nommage (titres, descriptions, tags), les futures playlists, le modèle de miniatures. Reclasser l’ensemble des vidéos et appliquer les statuts adéquats (public / non répertorié / privé). Créer et mettre à jour les playlists. Mettre en conformité les vidéos stratégiques : optimisation SEO, réécriture de titres, description, tags. 2. Production et optimisation de contenus pour Citeo.com Rédiger des articles destinés au citoyen-consommateur, en lien avec les équipes Digital et Social Media, intégrés dans un parcours digital global (réseaux sociaux, newsletter…). Optimiser les articles existants (SEO, structure, pédagogie). Contribuer à l’amélioration continue via le monitoring des visites et l’analyse des parcours utilisateurs. 3. Support aux missions Social Media & E‑Influence Participer à l’animation des réseaux sociaux B2C (Instagram, Facebook, TikTok, YouTube). Contribuer à la production éditoriale : idées de formats, briefs créatifs, rédaction de légendes. Aider au suivi des partenariats créateurs (coordination agence, vérification des livrables). Participer à la programmation et au suivi des publications. Ces fonctions sont susceptibles de modification et d’évolution.",
+      "dateCreation": "2026-03-23T14:20:52Z",
+      "lieuTravail": {
+        "libelle": "Paris (FR)",
+        "codePostal": "75011",
+        "commune": "Paris"
+      },
+      "entreprise": {
+        "nom": "Citeo"
+      },
+      "typeContrat": "Stage",
+      "typeContratLibelle": "Stage",
+      "salaire": null,
+      "experienceRequise": "6 mois",
+      "niveauEtude": "Bac+5+",
+      "origineOffre": {
+        "origine": "2",
+        "urlOrigine": "https://www.welcometothejungle.com/fr/companies/citeo/jobs/stagiaire-charge-e-de-communication-numerique-f-h_paris"
       },
       "source": "welcome_to_the_jungle"
     },
@@ -659,78 +737,6 @@
       "origineOffre": {
         "origine": "2",
         "urlOrigine": "https://www.welcometothejungle.com/fr/companies/junto/jobs/alternant-e-marketing-communication-septembre-2026_paris"
-      },
-      "source": "welcome_to_the_jungle"
-    },
-    {
-      "id": "WTTJ_27DB7288",
-      "intitule": "Stagiaire Recrutement & Communication 360° (H/F)",
-      "description": "Rattaché(e) au service RH, vos principales missions seront les suivantes : 1) Recrutement Sourcing & diffusion : Rédiger et publier les offres d’emploi sur les jobboards et réseaux sociaux Sourcer des candidats via les CVthèques pour notre vivier Sélection & suivi : Trier les CV et présélectionner les candidatures Réaliser les préqualifications téléphoniques Organiser les entretiens et y participer Mettre à jour les outils de suivi (tableaux de bord via Excel) Effectuer les retours aux candidats suite aux entretiens réalisés 2) Communication Communication interne et externe : Créer de contenus (post, visuels, vidéos, témoignages collaborateurs) et animer la page LinkedIn de Naturopera Participer à l’organisation d’événements internes et moments conviviaux 3) Projets RH transverses Animer la plateforme RSE Komeet (publication des actions, mobilisation des collaborateurs et suivi des indicateurs) Réaliser une veille sur les tendances RH et recrutement Améliorer les process existants",
-      "dateCreation": "2026-03-23T09:50:19Z",
-      "lieuTravail": {
-        "libelle": "Boulogne-Billancourt (FR)",
-        "codePostal": "92100",
-        "commune": "Boulogne-Billancourt"
-      },
-      "entreprise": {
-        "nom": "Naturopera"
-      },
-      "typeContrat": "Stage",
-      "typeContratLibelle": "Stage",
-      "salaire": null,
-      "experienceRequise": "12 mois (~1 ans)",
-      "niveauEtude": "Bac+2",
-      "origineOffre": {
-        "origine": "2",
-        "urlOrigine": "https://www.welcometothejungle.com/fr/companies/naturopera/jobs/stagiaire-recrutement-communication-360-h-f_boulogne-billancourt"
-      },
-      "source": "welcome_to_the_jungle"
-    },
-    {
-      "id": "WTTJ_B8B5FC2F",
-      "intitule": "Stagiaire Communication & Marketing (F/H) 1",
-      "description": "Stagiaire Communication & Marketing (F/H) 1 Communication Keolis, leader mondial de la mobilité partagée, facilite le quotidien de millions de voyageurs. Nous proposons des solutions de transport en commun sûres, performantes et durables qui renforcent l'attractivité des territoires. En 2024, le Groupe a réalisé un chiffre d'affaires de 7,7 milliards d'euros. Présent dans 13 pays, nous sommes convaincus que nos 70 000 collaborateurs sont la clé de notre succès. Acteur majeur de la mobilité du quotidien, nous exploitons des services de transport de voyageurs en délégation pour la Région. Présent au quotidien dans la vie de milliers d'utilisateurs, Keolis Pays d'Artois transporte ses voyageurs grâce à la gestion de lignes confiées par le réseau régional Hauts-de-France, ainsi que la réalisation de plusieurs lignes sur les réseaux TADAO et Artis. Vous avez à cœur de transporter les voyageurs dans les meilleures conditions de confort et de sécurité ? Rejoignez une entreprise à taille humaine, où la relation client, la ponctualité et le professionnalisme sont au cœur de nos priorités. Missions : Au sein de l’entreprise en lien avec l’Exploitation et la chargée Communication marketing , vous contribuez à concevoir, produire et diffuser nos communications locales : Contenus & éditorial : rédaction d’actualités, posts réseaux sociaux, Info voyageurs & proximité : visuels, affiches, flyers, posts perturbations, Campagnes marketing locales : soutien aux opérations Nous veillons au respect de la charte graphique et du ton de marque Keolis et Région. Profil recherché : Étudiant·e Bac+2 en communication, marketing, Excellentes capacités rédactionnelles en français, sens du visuel, orthographe irréprochable. Aisance social media (LinkedIn, Facebook,) ; veille et curiosité. Maîtrise des outils bureautiques ; notions de PAO (Illustrator/InDesign/Canva) appréciées. Esprit d’équipe. Lieu : Sainte‑Catherine‑lès‑Arras (62) – Déplacements ponctuels sur le territoire. Période & durée : Dés que possible pour une durée de 6 mois. Rythme : Temps plein – Stage conventionné.",
-      "dateCreation": "2026-03-22T22:05:46Z",
-      "lieuTravail": {
-        "libelle": "Courbevoie (FR)",
-        "codePostal": "92400",
-        "commune": "Courbevoie"
-      },
-      "entreprise": {
-        "nom": "Keolis"
-      },
-      "typeContrat": "Stage",
-      "typeContratLibelle": "Stage",
-      "salaire": null,
-      "experienceRequise": null,
-      "niveauEtude": null,
-      "origineOffre": {
-        "origine": "2",
-        "urlOrigine": "https://www.welcometothejungle.com/fr/companies/keolis-/jobs/stagiaire-communication-marketing-f-h-1_abidjan"
-      },
-      "source": "welcome_to_the_jungle"
-    },
-    {
-      "id": "WTTJ_B7F7ECD2",
-      "intitule": "APPRENTI.E - CHARGÉ.E DE PROJET COMMUNICATION 360°",
-      "description": "La direction de la communication (DIRCOM) accompagne la stratégie globale de l’IGN. Chargée de faire connaître l’institut, de valoriser ses missions et ses activités, de développer sa notoriété et son image, elle compte une trentaine d’agents répartis au sein de deux services : le service Contenus, médias et influence (SCMI) et le service Conseil et pilotage des projets de communication (SCPPC). Ce dernier est composé de deux départements (Conseil et pilotage des projets de communication et Fabrique digitale) et d’une responsable de la communication interne. Le poste d’apprenti.e chargé.e de projet communication 360° est positionné au sein du département Conseil et pilotage des projets de communication. Composé de cinq chef.fes de projet communication externe et d’une chargée de médiation scientifique qui couvrent l’ensemble des domaines d’intervention de l’IGN (planification écologique, forêt, cartographie numérique, recherche, innovation, tourisme, outdoor, etc.), ce département conçoit, coordonne et suit la réalisation des opérations de communication externe quelle que soit la nature - campagnes de communication, relations publiques, évènements, campagnes publicitaires print & web, influence, actions de médiation, etc. - et le public cible. Il veille à la mise en cohérence des actions de communication ainsi qu’à leur mise en séquence pour les inscrire dans une programmation annuelle impactante. Il travaille en interaction étroite avec les équipes du service SCMI (éditorial, graphisme, médias sociaux, relations presse) ainsi qu’avec la Fabrique digitale (applications mobiles, portails métiers, etc.) et la responsable de la communication interne. Ce département assure également l’animation et la médiation scientifique auprès du grand public, des publics scolaires et des enseignants. En tant que chargé.e de projet de communication, vous aurez en charge la conception et le pilotage d’actions de communication à 360° auprès de publics variés (institutionnels, leaders d’opinion, BtoB, grand public) : événements institutionnels type présentation de nouveau produit, tables rondes, participation à des salons, visites de VIP / décideurs publics (ministres, parlementaires, dirigeants de services publics), etc. Parmi vos missions principales : Contribuer à la conception et au déploiement de plans de communication thématiques (forêt, environnement, biodiversité, agriculture, numérique, innovation, intelligence artificielle, aménagement, etc.) ainsi que leur suivi opérationnel ; Contribuer au pilotage et à la mise en oeuvre d’actions de communication multicanale (évènements, campagnes publicitaires, partenariats, création et déploiement de kits de communication, etc.) en coordination avec toutes les équipes DIRCOM (éditorial, réseaux sociaux, relations presse, studio graphique, etc.).",
-      "dateCreation": "2026-03-23T12:44:15Z",
-      "lieuTravail": {
-        "libelle": "Saint-Mandé (FR)",
-        "codePostal": "94160",
-        "commune": "Saint-Mandé"
-      },
-      "entreprise": {
-        "nom": "IGN"
-      },
-      "typeContrat": "Alternance",
-      "typeContratLibelle": "Alternance",
-      "salaire": null,
-      "experienceRequise": null,
-      "niveauEtude": null,
-      "origineOffre": {
-        "origine": "2",
-        "urlOrigine": "https://www.welcometothejungle.com/fr/companies/ign/jobs/apprenti-e-charge-e-de-projet-communication-360_saint-mande"
       },
       "source": "welcome_to_the_jungle"
     }
