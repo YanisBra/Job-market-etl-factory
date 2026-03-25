@@ -22,6 +22,8 @@ Stack:
 ├── data/
 │   └── raw/
 ├── docker-compose.yaml
+├── scripts/
+│   └── recover_airflow.sh
 ├── requirements.txt
 ├── .env.example
 ├── src/
@@ -211,6 +213,18 @@ docker compose exec -T airflow-scheduler airflow dags list
 docker compose exec -T airflow-webserver airflow sync-perm
 docker compose restart airflow-webserver airflow-scheduler
 ```
+
+Correction automatique (recommandee):
+
+```bash
+./scripts/recover_airflow.sh
+```
+
+Ce script:
+- verifie les fichiers DAG locaux
+- recree `airflow-webserver` et `airflow-scheduler` pour forcer le remount
+- sync les permissions Airflow
+- affiche la liste des DAGs detectes
 
 ### Task Airflow en echec
 
