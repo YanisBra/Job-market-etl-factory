@@ -34,7 +34,7 @@ with DAG(
 
         echo "Starting WTTJ scraping ingestion..."
         cd /opt/airflow/src
-        python welcome_to_the_jungle_scraper.py --page 1 --max-pages 1 --detail-delay-seconds 0.1
+        python welcome_to_the_jungle_scraper.py --page 1 --max-pages 3 --detail-delay-seconds 0.1
         echo "WTTJ scraping ingestion finished."
         """,
         execution_timeout=timedelta(minutes=15),

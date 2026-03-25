@@ -84,8 +84,7 @@ class MinioConfig:
             endpoint=endpoint,
             access_key=access_key,
             secret_key=secret_key,
-            bucket=env.get("MINIO_BUCKET_RAW_API", "raw-api-france-travail").strip()
-            or "raw-api-france-travail",
+            bucket=env.get("MINIO_BUCKET_RAW_API", "raw-api").strip() or "raw-api",
             secure=secure,
         )
 
@@ -153,16 +152,16 @@ class FranceTravailApiClient:
     def search_offers(
         self,
         keywords: str,
-        location: str = "75",
+        location: str = "",
         range_: str = "0-49",
         contract_type: str | None = None,
     ) -> list[dict[str, Any]]:
         token = self._get_access_token()
-        params: dict[str, str] = {
-            "motsCles": keywords,
-            "lieux": location,
-            "range": range_,
-        }
+        params: dict[str, str] = {"range": range_}
+        if keywords.strip():
+            params["motsCles"] = keywords
+        if location.strip():
+            params["lieux"] = location
         if contract_type:
             params["typeContrat"] = contract_type
 
@@ -253,23 +252,43 @@ class OfferCollector:
         self,
         keywords: str,
         location: str,
-        range_: str,
+        pages: int,
         contract_type: str | None,
         output_path: Path,
+        page_size: int = 50,
     ) -> Path:
-        offers = self.client.search_offers(
-            keywords=keywords,
-            location=location,
-            range_=range_,
-            contract_type=contract_type,
-        )
+        page_count = max(1, pages)
+        size = max(1, page_size)
+        offers: list[dict[str, Any]] = []
+        ranges: list[str] = []
+        for page_index in range(page_count):
+            start = page_index * size
+            end = start + size - 1
+            current_range = f"{start}-{end}"
+            ranges.append(current_range)
+            page_results = self.client.search_offers(
+                keywords=keywords,
+                location=location,
+                range_=current_range,
+                contract_type=contract_type,
+            )
+            offers.extend(page_results)
+
+        dedup_by_id: dict[str, dict[str, Any]] = {}
+        for offer in offers:
+            key = str(offer.get("id") or json.dumps(offer, sort_keys=True))
+            dedup_by_id[key] = offer
+        offers = list(dedup_by_id.values())
+
         output = {
             "source": "france_travail_api",
             "collected_at_utc": datetime.now(timezone.utc).isoformat(),
             "query": {
                 "keywords": keywords,
                 "location": location,
-                "range": range_,
+                "pages": page_count,
+                "page_size": size,
+                "ranges": ranges,
                 "contract_type": contract_type,
             },
             "total": len(offers),
@@ -287,9 +306,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Collecte des offres d'emploi via l'API France Travail."
     )
-    parser.add_argument("--keywords", default="data scientist")
-    parser.add_argument("--location", default="75")
-    parser.add_argument("--range", default="0-49", dest="range_")
+    parser.add_argument("--keywords", default="")
+    parser.add_argument("--location", default="")
+    parser.add_argument("--pages", type=int, default=3)
+    parser.add_argument("--page-size", type=int, default=50)
     parser.add_argument("--contract-type", default=None)
     parser.add_argument(
         "--output",
@@ -314,7 +334,8 @@ def main() -> int:
         output_path = collector.collect(
             keywords=args.keywords,
             location=args.location,
-            range_=args.range_,
+            pages=args.pages,
+            page_size=args.page_size,
             contract_type=args.contract_type,
             output_path=Path(args.output),
         )

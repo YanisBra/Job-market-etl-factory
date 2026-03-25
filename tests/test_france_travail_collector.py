@@ -124,13 +124,18 @@ def test_collect_writes_json(tmp_path):
     responses = [
         FakeResponse({"access_token": "abc-token"}),
         FakeResponse({"resultats": [{"id": "A1"}]}),
+        FakeResponse({"access_token": "abc-token"}),
+        FakeResponse({"resultats": [{"id": "A2"}]}),
+        FakeResponse({"access_token": "abc-token"}),
+        FakeResponse({"resultats": [{"id": "A3"}]}),
     ]
 
     with patch("france_travail_collector.request.urlopen", side_effect=responses):
         written_path = collector.collect(
             keywords="data scientist",
             location="75",
-            range_="0-10",
+            pages=3,
+            page_size=1,
             contract_type=None,
             output_path=out_file,
         )
@@ -139,7 +144,44 @@ def test_collect_writes_json(tmp_path):
     assert out_file.exists()
     payload = json.loads(out_file.read_text(encoding="utf-8"))
     assert payload["source"] == "france_travail_api"
-    assert payload["total"] == 1
+    assert payload["total"] == 3
+    assert payload["query"]["pages"] == 3
+    assert payload["query"]["ranges"] == ["0-0", "1-1", "2-2"]
+
+
+def test_collect_with_range_override(tmp_path):
+    # Le collecteur construit simplement les ranges pages*page_size.
+    cfg = FranceTravailConfig(
+        client_id="id",
+        client_secret="secret",
+        scope="scope",
+        token_url="https://token.test",
+        search_url="https://search.test",
+    )
+    client = FranceTravailApiClient(cfg)
+    collector = OfferCollector(client)
+    out_file = tmp_path / "offers_ranges.json"
+
+    responses = [
+        FakeResponse({"access_token": "abc-token"}),
+        FakeResponse({"resultats": [{"id": "A1"}]}),
+        FakeResponse({"access_token": "abc-token"}),
+        FakeResponse({"resultats": [{"id": "A2"}]}),
+    ]
+
+    with patch("france_travail_collector.request.urlopen", side_effect=responses):
+        collector.collect(
+            keywords="",
+            location="",
+            pages=2,
+            page_size=10,
+            contract_type=None,
+            output_path=out_file,
+        )
+
+    payload = json.loads(out_file.read_text(encoding="utf-8"))
+    assert payload["query"]["pages"] == 2
+    assert payload["query"]["ranges"] == ["0-9", "10-19"]
 
 
 def test_minio_upload_creates_bucket_and_uploads():

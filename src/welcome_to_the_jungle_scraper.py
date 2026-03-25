@@ -69,9 +69,7 @@ class MinioConfig:
             endpoint=endpoint,
             access_key=access_key,
             secret_key=secret_key,
-            bucket=env.get(
-                "MINIO_BUCKET_RAW_SCRAP", "raw-scrap-welcome-to-the-jungle"
-            ).strip()
+            bucket=env.get("MINIO_BUCKET_RAW_SCRAP", "raw-scrap").strip()
             or "raw-scrap",
             secure=secure,
         )
@@ -649,7 +647,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--query", default="")
     parser.add_argument("--page", type=int, default=1)
-    parser.add_argument("--max-pages", type=int, default=1)
+    parser.add_argument("--max-pages", type=int, default=3)
     parser.add_argument("--detail-delay-seconds", type=float, default=0.2)
     parser.add_argument(
         "--output",

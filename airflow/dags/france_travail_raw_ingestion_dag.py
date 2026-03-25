@@ -20,6 +20,7 @@ with DAG(
     description="Collecte brute France Travail puis upload MinIO (raw-api)",
     start_date=datetime(2026, 3, 23),
     schedule="0 */3 * * *",
+    catchup=False,
     default_args=default_args,
     max_active_runs=1,
     tags=["job-market", "raw", "france-travail", "api", "minio"],
@@ -33,7 +34,7 @@ with DAG(
 
         echo "Starting France Travail ingestion..."
         cd /opt/airflow/src
-        python france_travail_collector.py --location "75" --range "0-49"
+        python france_travail_collector.py --pages 3 --page-size 50
         echo "France Travail ingestion finished."
         """,
         execution_timeout=timedelta(minutes=10),
