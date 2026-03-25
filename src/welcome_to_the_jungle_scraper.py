@@ -31,9 +31,8 @@ def load_dotenv_file(path: str = ".env") -> None:
         if not key:
             continue
 
-        if (
-            (value.startswith('"') and value.endswith('"'))
-            or (value.startswith("'") and value.endswith("'"))
+        if (value.startswith('"') and value.endswith('"')) or (
+            value.startswith("'") and value.endswith("'")
         ):
             value = value[1:-1]
 
@@ -70,7 +69,10 @@ class MinioConfig:
             endpoint=endpoint,
             access_key=access_key,
             secret_key=secret_key,
-            bucket=env.get("MINIO_BUCKET_RAW_SCRAP", "raw-scrap-welcome-to-the-jungle").strip() or "raw-scrap",
+            bucket=env.get(
+                "MINIO_BUCKET_RAW_SCRAP", "raw-scrap-welcome-to-the-jungle"
+            ).strip()
+            or "raw-scrap",
             secure=secure,
         )
 
@@ -101,9 +103,13 @@ class MinioRawStorage:
             if not self.client.bucket_exists(self.config.bucket):
                 self.client.make_bucket(self.config.bucket)
         except Exception as exc:
-            raise RuntimeError(f"Echec creation/verification bucket MinIO: {exc}") from exc
+            raise RuntimeError(
+                f"Echec creation/verification bucket MinIO: {exc}"
+            ) from exc
 
-    def upload_raw_json(self, payload: dict[str, Any], source: str = "welcome_to_the_jungle") -> str:
+    def upload_raw_json(
+        self, payload: dict[str, Any], source: str = "welcome_to_the_jungle"
+    ) -> str:
         now = datetime.now(timezone.utc)
         object_key = f"{source}/{now:%Y/%m/%d}/offers_{now:%Y%m%dT%H%M%SZ}.json"
         body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
@@ -195,7 +201,9 @@ class WelcomeToTheJungleScraper:
                 return response.read().decode("utf-8", errors="replace")
         except error.HTTPError as exc:
             details = exc.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"Echec scraping WTTJ ({exc.code}): {details[:300]}") from exc
+            raise RuntimeError(
+                f"Echec scraping WTTJ ({exc.code}): {details[:300]}"
+            ) from exc
         except error.URLError as exc:
             raise RuntimeError(f"Echec connexion scraping WTTJ: {exc.reason}") from exc
         except Exception as exc:
@@ -218,7 +226,9 @@ class WelcomeToTheJungleScraper:
                 f"Echec connexion detail WTTJ url={job_url}: {exc.reason}"
             ) from exc
         except Exception as exc:
-            raise RuntimeError(f"Echec technique detail WTTJ url={job_url}: {exc}") from exc
+            raise RuntimeError(
+                f"Echec technique detail WTTJ url={job_url}: {exc}"
+            ) from exc
 
     def _normalize_jobposting(self, job: dict[str, Any]) -> dict[str, Any]:
         hiring_org = job.get("hiringOrganization") or {}
@@ -238,7 +248,9 @@ class WelcomeToTheJungleScraper:
         date_creation = job.get("datePosted")
         type_contrat = self._map_contract_type(job.get("employmentType"))
         salaire = self._extract_salary(job.get("baseSalary"))
-        experience_requise = self._extract_requirement_text(job.get("experienceRequirements"))
+        experience_requise = self._extract_requirement_text(
+            job.get("experienceRequirements")
+        )
         niveau_etude = self._extract_requirement_text(job.get("educationRequirements"))
         lieu_libelle = self._build_lieu_libelle(city=city, country=country)
         offer_id = self._build_offer_id(url=url, title=title)
@@ -426,7 +438,9 @@ class WelcomeToTheJungleScraper:
             if isinstance(payload, dict):
                 entries = [payload]
                 if isinstance(payload.get("@graph"), list):
-                    entries.extend([node for node in payload["@graph"] if isinstance(node, dict)])
+                    entries.extend(
+                        [node for node in payload["@graph"] if isinstance(node, dict)]
+                    )
             elif isinstance(payload, list):
                 entries = [item for item in payload if isinstance(item, dict)]
 
@@ -492,7 +506,9 @@ class WelcomeToTheJungleScraper:
             self._nested_value(offer, "origineOffre.urlOrigine")
         )
 
-    def _merge_offer(self, base_offer: dict[str, Any], detail_offer: dict[str, Any]) -> dict[str, Any]:
+    def _merge_offer(
+        self, base_offer: dict[str, Any], detail_offer: dict[str, Any]
+    ) -> dict[str, Any]:
         merged = {**base_offer}
         for key, value in detail_offer.items():
             if isinstance(value, dict) and isinstance(merged.get(key), dict):
@@ -547,7 +563,9 @@ class WelcomeToTheJungleScraper:
                 continue
             href = html[href_start + 1 : href_end]
             if "/jobs/" in href:
-                full_url = href if href.startswith("http") else f"{self.config.base_url}{href}"
+                full_url = (
+                    href if href.startswith("http") else f"{self.config.base_url}{href}"
+                )
                 offer_id = self._build_offer_id(url=full_url, title=None)
                 links.append(
                     {
@@ -604,7 +622,9 @@ class WTTJCollector:
             all_offers.extend(offers)
 
         for offer in all_offers:
-            key = self.scraper._nested_value(offer, "origineOffre.urlOrigine") or offer.get("id")
+            key = self.scraper._nested_value(
+                offer, "origineOffre.urlOrigine"
+            ) or offer.get("id")
             dedup_by_url[str(key)] = offer
 
         offers = list(dedup_by_url.values())

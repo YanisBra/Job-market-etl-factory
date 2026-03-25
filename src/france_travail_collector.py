@@ -25,7 +25,9 @@ class FranceTravailConfig:
         env = os.environ
         required = {
             "FRANCE_TRAVAIL_CLIENT_ID": env.get("FRANCE_TRAVAIL_CLIENT_ID", "").strip(),
-            "FRANCE_TRAVAIL_CLIENT_SECRET": env.get("FRANCE_TRAVAIL_CLIENT_SECRET", "").strip(),
+            "FRANCE_TRAVAIL_CLIENT_SECRET": env.get(
+                "FRANCE_TRAVAIL_CLIENT_SECRET", ""
+            ).strip(),
         }
         missing = [key for key, value in required.items() if not value]
         if missing:
@@ -82,7 +84,8 @@ class MinioConfig:
             endpoint=endpoint,
             access_key=access_key,
             secret_key=secret_key,
-            bucket=env.get("MINIO_BUCKET_RAW_API", "raw-api-france-travail").strip() or "raw-api-france-travail",
+            bucket=env.get("MINIO_BUCKET_RAW_API", "raw-api-france-travail").strip()
+            or "raw-api-france-travail",
             secure=secure,
         )
 
@@ -103,9 +106,8 @@ def load_dotenv_file(path: str = ".env") -> None:
         if not key:
             continue
 
-        if (
-            (value.startswith('"') and value.endswith('"'))
-            or (value.startswith("'") and value.endswith("'"))
+        if (value.startswith('"') and value.endswith('"')) or (
+            value.startswith("'") and value.endswith("'")
         ):
             value = value[1:-1]
 
@@ -137,7 +139,9 @@ class FranceTravailApiClient:
                 f"Echec auth France Travail ({exc.code}): {details}"
             ) from exc
         except error.URLError as exc:
-            raise RuntimeError(f"Echec connexion auth France Travail: {exc.reason}") from exc
+            raise RuntimeError(
+                f"Echec connexion auth France Travail: {exc.reason}"
+            ) from exc
         except Exception as exc:
             raise RuntimeError(f"Echec technique auth France Travail: {exc}") from exc
 
@@ -182,7 +186,9 @@ class FranceTravailApiClient:
                 f"Echec connexion recherche France Travail: {exc.reason}"
             ) from exc
         except Exception as exc:
-            raise RuntimeError(f"Echec technique recherche France Travail: {exc}") from exc
+            raise RuntimeError(
+                f"Echec technique recherche France Travail: {exc}"
+            ) from exc
 
         return payload.get("resultats", [])
 
@@ -213,13 +219,15 @@ class MinioRawStorage:
             if not self.client.bucket_exists(self.config.bucket):
                 self.client.make_bucket(self.config.bucket)
         except Exception as exc:
-            raise RuntimeError(f"Echec creation/verification bucket MinIO: {exc}") from exc
+            raise RuntimeError(
+                f"Echec creation/verification bucket MinIO: {exc}"
+            ) from exc
 
-    def upload_raw_json(self, payload: dict[str, Any], source: str = "france_travail") -> str:
+    def upload_raw_json(
+        self, payload: dict[str, Any], source: str = "france_travail"
+    ) -> str:
         now = datetime.now(timezone.utc)
-        object_key = (
-            f"{source}/{now:%Y/%m/%d}/offers_{now:%Y%m%dT%H%M%SZ}.json"
-        )
+        object_key = f"{source}/{now:%Y/%m/%d}/offers_{now:%Y%m%dT%H%M%SZ}.json"
         body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
 
         self._ensure_bucket()
