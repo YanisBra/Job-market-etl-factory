@@ -39,10 +39,18 @@ Stack:
 - Docker + Docker Compose
 - Python 3.9+ (local)
 - Acces API France Travail (client_id + client_secret)
+- Git (optionnel, pour cloner/versionner)
+
+Compatibilite:
+- macOS: Docker Desktop + Terminal zsh/bash
+- Linux: Docker Engine + plugin Compose
+- Windows: Docker Desktop + PowerShell (ou WSL2 recommande)
 
 ## 3) Environnement local Python (venv)
 
 Le venv est recommande pour eviter les conflits de dependances.
+
+macOS / Linux:
 
 ```bash
 python3 -m venv .venv
@@ -51,9 +59,19 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
+Windows (PowerShell):
+
+```powershell
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
 Ensuite, utilise toujours:
 - `.venv/bin/python ...`
 - ou active le venv avec `source .venv/bin/activate`
+- Windows: `.venv\Scripts\python.exe ...`
 
 ## 4) Configuration `.env`
 
@@ -61,8 +79,16 @@ Le projet lit automatiquement le fichier `.env`.
 
 Copie d'abord le template reproductible:
 
+macOS / Linux:
+
 ```bash
 cp .env.example .env
+```
+
+Windows (PowerShell):
+
+```powershell
+Copy-Item .env.example .env
 ```
 
 Variables critiques:
@@ -81,6 +107,8 @@ Important securite:
 - Utilise un `.env` local et rotate les secrets si exposes.
 
 ## 5) Lancer l'infrastructure (reproductible)
+
+Commande identique sur macOS/Linux/Windows:
 
 ```bash
 docker compose up -d
@@ -117,11 +145,19 @@ docker compose down -v
 
 ### 7.1 France Travail -> `raw-api`
 
+macOS / Linux:
+
 ```bash
 .venv/bin/python src/france_travail_collector.py \
   --keywords "data scientist" \
   --location "75" \
   --range "0-49"
+```
+
+Windows (PowerShell):
+
+```powershell
+.venv\Scripts\python.exe src\france_travail_collector.py --keywords "data scientist" --location "75" --range "0-49"
 ```
 
 Sorties:
@@ -130,11 +166,21 @@ Sorties:
 
 Mode debug local sans upload MinIO:
 
+macOS / Linux:
+
 ```bash
 .venv/bin/python src/france_travail_collector.py --skip-minio
 ```
 
+Windows (PowerShell):
+
+```powershell
+.venv\Scripts\python.exe src\france_travail_collector.py --skip-minio
+```
+
 ### 7.2 WTTJ -> `raw-scrap`
+
+macOS / Linux:
 
 ```bash
 .venv/bin/python src/welcome_to_the_jungle_scraper.py \
@@ -144,14 +190,28 @@ Mode debug local sans upload MinIO:
   --detail-delay-seconds 0.1
 ```
 
+Windows (PowerShell):
+
+```powershell
+.venv\Scripts\python.exe src\welcome_to_the_jungle_scraper.py --query "data scientist" --page 1 --max-pages 1 --detail-delay-seconds 0.1
+```
+
 Sorties:
 - Fichier local: `data/raw/wttj_offers.json`
 - MinIO: `raw-scrap/welcome_to_the_jungle/YYYY/MM/DD/offers_<timestamp>.json`
 
 Mode debug local sans upload MinIO:
 
+macOS / Linux:
+
 ```bash
 .venv/bin/python src/welcome_to_the_jungle_scraper.py --skip-minio
+```
+
+Windows (PowerShell):
+
+```powershell
+.venv\Scripts\python.exe src\welcome_to_the_jungle_scraper.py --skip-minio
 ```
 
 ## 8) Airflow DAGs
@@ -186,8 +246,16 @@ docker compose exec -T airflow-scheduler airflow tasks states-for-dag-run wttj_r
 
 Lancer tous les tests:
 
+macOS / Linux:
+
 ```bash
 .venv/bin/python -m pytest -q
+```
+
+Windows (PowerShell):
+
+```powershell
+.venv\Scripts\python.exe -m pytest -q
 ```
 
 Couverture actuelle:
@@ -216,8 +284,20 @@ docker compose restart airflow-webserver airflow-scheduler
 
 Correction automatique (recommandee):
 
+macOS / Linux:
+
 ```bash
 ./scripts/recover_airflow.sh
+```
+
+Windows:
+- option recommandee: lancer ce script depuis WSL2/Git Bash
+- sinon utiliser la sequence manuelle ci-dessous (PowerShell):
+
+```powershell
+docker compose up -d --force-recreate airflow-webserver airflow-scheduler
+docker compose exec -T airflow-webserver airflow sync-perm
+docker compose exec -T airflow-scheduler airflow dags list
 ```
 
 Ce script:
