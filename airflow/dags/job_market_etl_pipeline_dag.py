@@ -18,6 +18,7 @@ default_args = {
     "retry_delay": timedelta(minutes=2),
 }
 
+
 @provide_session
 def _latest_success_logical_date(
     logical_date,
@@ -110,4 +111,10 @@ with DAG(
 
     end = EmptyOperator(task_id="end")
 
-    start >> [wait_france_travail_ingestion, wait_wttj_ingestion] >> normalize_raw >> load_to_postgres >> end
+    (
+        start
+        >> [wait_france_travail_ingestion, wait_wttj_ingestion]
+        >> normalize_raw
+        >> load_to_postgres
+        >> end
+    )
