@@ -251,7 +251,8 @@ DAG ETL:
 Notes:
 - Les DAGs ingestion executent directement les scripts de `src/` via `BashOperator`.
 - Les variables sont injectees via `docker-compose` (pas besoin de Airflow Variables UI pour ingestion).
-- Le DAG ETL execute `transform_offers.py` puis `load_to_postgres.py`.
+- Le DAG ETL attend la fin des 2 DAGs ingestion (`france_travail_raw_ingestion` et `wttj_raw_ingestion`) via `ExternalTaskSensor`.
+- Le DAG ETL execute ensuite `transform_offers.py` puis `load_to_postgres.py`.
 
 ## 10) Lancer et verifier un run Airflow
 
