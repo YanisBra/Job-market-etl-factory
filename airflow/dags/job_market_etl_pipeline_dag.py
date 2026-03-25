@@ -17,7 +17,7 @@ default_args = {
 
 with DAG(
     dag_id="job_market_etl_pipeline",
-    description="Pipeline ETL (squelette) apres ingestion raw",
+    description="Pipeline ETL: nettoyage raw + chargement Postgres",
     start_date=datetime(2026, 3, 23),
     schedule=None,
     catchup=False,
@@ -29,14 +29,19 @@ with DAG(
     normalize_raw = BashOperator(
         task_id="normalize_raw",
         bash_command=(
-            "echo 'TODO: ajouter src/transform_offers.py pour nettoyage + dedup depuis MinIO raw'"
+            "cd /opt/airflow/src && "
+            "python transform_offers.py "
+            "--france-travail-input data/raw/france_travail_offers.json "
+            "--wttj-input data/raw/wttj_offers.json "
+            "--output data/processed/unified_offers.json"
         ),
     )
 
     load_to_postgres = BashOperator(
         task_id="load_to_postgres",
         bash_command=(
-            "echo 'TODO: ajouter src/load_offers_postgres.py avec UPSERT (UNIQUE source, source_offer_id)'"
+            "cd /opt/airflow/src && "
+            "python load_to_postgres.py --input data/processed/unified_offers.json"
         ),
     )
 

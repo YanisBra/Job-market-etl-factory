@@ -244,7 +244,9 @@ class WelcomeToTheJungleScraper:
         country = postal_address.get("addressCountry")
         postal_code = postal_address.get("postalCode")
         date_creation = job.get("datePosted")
-        type_contrat = self._map_contract_type(job.get("employmentType"))
+        employment_type = job.get("employmentType")
+        type_contrat = self._map_contract_type(employment_type)
+        alternance = self._is_alternance(employment_type)
         salaire = self._extract_salary(job.get("baseSalary"))
         experience_requise = self._extract_requirement_text(
             job.get("experienceRequirements")
@@ -268,6 +270,7 @@ class WelcomeToTheJungleScraper:
             },
             "typeContrat": type_contrat,
             "typeContratLibelle": type_contrat,
+            "alternance": alternance,
             "salaire": salaire,
             "experienceRequise": experience_requise,
             "niveauEtude": niveau_etude,
@@ -306,6 +309,16 @@ class WelcomeToTheJungleScraper:
             "INTERN": "Stage",
         }
         return mapping.get(value, value)
+
+    def _is_alternance(self, employment_type: Any) -> bool:
+        if isinstance(employment_type, str):
+            return employment_type.strip().upper() == "CONTRACTOR"
+        if isinstance(employment_type, list):
+            return any(
+                isinstance(item, str) and item.strip().upper() == "CONTRACTOR"
+                for item in employment_type
+            )
+        return False
 
     def _extract_requirement_text(self, value: Any) -> str | None:
         if value is None:
@@ -581,6 +594,7 @@ class WelcomeToTheJungleScraper:
                         },
                         "typeContrat": None,
                         "typeContratLibelle": None,
+                        "alternance": False,
                         "salaire": None,
                         "experienceRequise": None,
                         "niveauEtude": None,

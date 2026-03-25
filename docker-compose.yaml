@@ -61,6 +61,11 @@ services:
       WTTJ_BASE_URL: ${WTTJ_BASE_URL}
       WTTJ_TIMEOUT_SECONDS: ${WTTJ_TIMEOUT_SECONDS}
       WTTJ_USER_AGENT: ${WTTJ_USER_AGENT}
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${POSTGRES_DB}
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - airflow_logs:/opt/airflow/logs
       - ./airflow/dags:/opt/airflow/dags
@@ -104,6 +109,11 @@ services:
       WTTJ_BASE_URL: ${WTTJ_BASE_URL}
       WTTJ_TIMEOUT_SECONDS: ${WTTJ_TIMEOUT_SECONDS}
       WTTJ_USER_AGENT: ${WTTJ_USER_AGENT}
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${POSTGRES_DB}
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - airflow_logs:/opt/airflow/logs
       - ./airflow/dags:/opt/airflow/dags
@@ -139,6 +149,11 @@ services:
       WTTJ_BASE_URL: ${WTTJ_BASE_URL}
       WTTJ_TIMEOUT_SECONDS: ${WTTJ_TIMEOUT_SECONDS}
       WTTJ_USER_AGENT: ${WTTJ_USER_AGENT}
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${POSTGRES_DB}
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - airflow_logs:/opt/airflow/logs
       - ./airflow/dags:/opt/airflow/dags

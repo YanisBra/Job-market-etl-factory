@@ -28,7 +28,9 @@ Stack:
 ├── .env.example
 ├── src/
 │   ├── france_travail_collector.py
-│   └── welcome_to_the_jungle_scraper.py
+│   ├── welcome_to_the_jungle_scraper.py
+│   ├── transform_offers.py
+│   └── load_to_postgres.py
 └── tests/
     ├── test_france_travail_collector.py
     └── test_welcome_to_the_jungle_scraper.py
@@ -96,7 +98,7 @@ Variables critiques:
 - France Travail: `FRANCE_TRAVAIL_CLIENT_ID`, `FRANCE_TRAVAIL_CLIENT_SECRET`
 - Airflow: `AIRFLOW_*`
 - Postgres: `POSTGRES_*`
-- Airflow deps: `AIRFLOW_ADDITIONAL_REQUIREMENTS` (par defaut: `minio`)
+- Airflow deps: `AIRFLOW_ADDITIONAL_REQUIREMENTS` (recommande: `minio psycopg2-binary`)
 
 Buckets MinIO utilises (noms actuels):
 - API France Travail: `raw-api`
@@ -149,15 +151,14 @@ macOS / Linux:
 
 ```bash
 .venv/bin/python src/france_travail_collector.py \
-  --keywords "data scientist" \
-  --location "75" \
-  --range "0-49"
+  --pages 3 \
+  --page-size 50
 ```
 
 Windows (PowerShell):
 
 ```powershell
-.venv\Scripts\python.exe src\france_travail_collector.py --keywords "data scientist" --location "75" --range "0-49"
+.venv\Scripts\python.exe src\france_travail_collector.py --pages 3 --page-size 50
 ```
 
 Sorties:
@@ -184,16 +185,16 @@ macOS / Linux:
 
 ```bash
 .venv/bin/python src/welcome_to_the_jungle_scraper.py \
-  --query "data scientist" \
+  --query "" \
   --page 1 \
-  --max-pages 1 \
+  --max-pages 3 \
   --detail-delay-seconds 0.1
 ```
 
 Windows (PowerShell):
 
 ```powershell
-.venv\Scripts\python.exe src\welcome_to_the_jungle_scraper.py --query "data scientist" --page 1 --max-pages 1 --detail-delay-seconds 0.1
+.venv\Scripts\python.exe src\welcome_to_the_jungle_scraper.py --query "" --page 1 --max-pages 3 --detail-delay-seconds 0.1
 ```
 
 Sorties:
@@ -214,20 +215,45 @@ Windows (PowerShell):
 .venv\Scripts\python.exe src\welcome_to_the_jungle_scraper.py --skip-minio
 ```
 
-## 8) Airflow DAGs
+## 8) ETL local (processed -> Postgres)
+
+### 8.1 Transformer les donnees brutes
+
+```bash
+.venv/bin/python src/transform_offers.py \
+  --france-travail-input data/raw/france_travail_offers.json \
+  --wttj-input data/raw/wttj_offers.json \
+  --output data/processed/unified_offers.json
+```
+
+Sortie:
+- `data/processed/unified_offers.json` (source unifiee nettoyee)
+
+### 8.2 Charger dans Postgres
+
+```bash
+.venv/bin/python src/load_to_postgres.py --input data/processed/unified_offers.json
+```
+
+Resultat:
+- table `offers_unified` creee si absente
+- `UPSERT` sur la cle `(source, source_offer_id, external_url)`
+
+## 9) Airflow DAGs
 
 DAGs ingestion actifs:
 - `france_travail_raw_ingestion`
 - `wttj_raw_ingestion`
 
-DAG ETL (placeholder pour la suite):
+DAG ETL:
 - `job_market_etl_pipeline`
 
 Notes:
 - Les DAGs ingestion executent directement les scripts de `src/` via `BashOperator`.
 - Les variables sont injectees via `docker-compose` (pas besoin de Airflow Variables UI pour ingestion).
+- Le DAG ETL execute `transform_offers.py` puis `load_to_postgres.py`.
 
-## 9) Lancer et verifier un run Airflow
+## 10) Lancer et verifier un run Airflow
 
 1. Ouvrir Airflow UI et activer les DAGs (`toggle ON`).
 2. Trigger manuel du DAG (bouton Play).
@@ -242,7 +268,16 @@ docker compose exec -T airflow-scheduler airflow tasks states-for-dag-run france
 docker compose exec -T airflow-scheduler airflow tasks states-for-dag-run wttj_raw_ingestion <dag_run_id>
 ```
 
-## 10) Tests
+Verification Postgres (nouvelles donnees + pas de doublons):
+
+```bash
+docker compose exec -T postgres psql -U airflow -d airflow -c "select count(*) as total from offers_unified;"
+docker compose exec -T postgres psql -U airflow -d airflow -c "select source, count(*) from offers_unified group by source order by source;"
+docker compose exec -T postgres psql -U airflow -d airflow -c "select source, source_offer_id, count(*) from offers_unified group by source, source_offer_id having count(*) > 1;"
+docker compose exec -T postgres psql -U airflow -d airflow -c "select source, external_url, count(*) from offers_unified group by source, external_url having count(*) > 1;"
+```
+
+## 11) Tests
 
 Lancer tous les tests:
 
@@ -265,14 +300,14 @@ Couverture actuelle:
 - Champs `salaire`, `experienceRequise`, `niveauEtude`
 - Collecte WTTJ multi-pages + dedup
 
-## 11) CI GitLab (build + test)
+## 12) CI GitLab (build + test)
 
 Pipeline dans `.gitlab-ci.yml`:
 - validation compose
 - quality (`ruff`, `black --check`)
 - tests (`pytest`)
 
-## 12) Troubleshooting rapide
+## 13) Troubleshooting rapide
 
 ### Aucun DAG visible dans Airflow UI
 

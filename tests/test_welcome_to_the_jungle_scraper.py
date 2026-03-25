@@ -53,6 +53,7 @@ def test_extract_offers_from_json_ld():
     assert offers[0]["salaire"]["min"] == 45000
     assert offers[0]["experienceRequise"] == "36 mois (~3 ans)"
     assert offers[0]["niveauEtude"] == "Bac+5"
+    assert offers[0]["alternance"] is False
 
 
 def test_fallback_extract_offers_from_links():
@@ -74,6 +75,7 @@ def test_fallback_extract_offers_from_links():
     assert offers[0]["origineOffre"]["urlOrigine"].startswith(
         "https://www.welcometothejungle.com/fr/companies/"
     )
+    assert offers[0]["alternance"] is False
 
 
 def test_enrich_offers_from_detail_pages():
