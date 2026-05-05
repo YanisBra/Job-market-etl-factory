@@ -353,6 +353,23 @@ job_market_raw_scrap_count_value
 job_market_postgres_count_value
 ```
 
+## 12.2) Analyse métier (Market Analysis) - Dashboard Postgres
+
+Contrairement au monitoring technique qui utilise Prometheus, l'analyse métier interroge directement la base **PostgreSQL** pour offrir une vision plus fine du marché.
+
+Mise en place:
+- Grafana est connecte directement a Postgres via `monitoring/grafana/provisioning/datasources/postgres.yaml`.
+- Le dashboard métier est provisionne via `monitoring/grafana/dashboards/job_market_analysis.json`.
+
+Indicateurs disponibles:
+- **Répartition par Type de Contrat** (Pie Chart) : CDI, CDD, Intérim, Saisonnier, etc.
+- **Top 10 des Villes** (Bar Chart) : Volume d'offres par localisation (codes INSEE).
+- **Top 10 des Recruteurs** (Bar Chart) : Les entreprises les plus actives.
+- **Volume d'offres par Jour** (Bar Chart) : Évolution quotidienne des publications.
+
+Accès:
+- Dans Grafana, ouvrir le dashboard : `Job Market Analysis - Métier`.
+
 ## 13) Troubleshooting rapide
 
 ### Aucun DAG visible dans Airflow UI

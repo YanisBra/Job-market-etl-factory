@@ -3,6 +3,7 @@
 __pycache__/
 RSA_Key.pem
 projet.pdf
+GEMINI.md
 *.py[cod]
 .pytest_cache/
 .ipynb_checkpoints/
