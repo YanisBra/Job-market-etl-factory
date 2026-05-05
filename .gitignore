@@ -1,6 +1,7 @@
 .env
 .venv/
 __pycache__/
+RSA_Key.pem
 *.py[cod]
 .pytest_cache/
 .ipynb_checkpoints/

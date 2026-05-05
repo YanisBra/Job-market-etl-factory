@@ -308,6 +308,51 @@ Pipeline dans `.gitlab-ci.yml`:
 - quality (`ruff`, `black --check`)
 - tests (`pytest`)
 
+## 12.1) Prometheus/Grafana - comparaison MinIO vs Postgres
+
+Objectif:
+- courbe 1: volume brut `raw-api`
+- courbe 2: volume brut `raw-scrap`
+- courbe 3: volume en base `offers_unified`
+
+Mise en place:
+- `load_to_postgres.py` renseigne `etl_metrics` a chaque run ETL
+- `postgres-exporter` expose ces 3 compteurs a Prometheus via:
+  - `monitoring/postgres_exporter/queries.yaml`
+- Grafana est provisionne automatiquement via:
+  - `monitoring/grafana/provisioning/datasources/prometheus.yaml`
+  - `monitoring/grafana/provisioning/dashboards/dashboard.yaml`
+  - `monitoring/grafana/dashboards/job_market_etl_overview.json`
+
+Relancer les services apres modification:
+
+```bash
+docker compose up -d --force-recreate postgres-exporter prometheus grafana
+```
+
+Verifier que les metriques existent:
+
+```bash
+docker compose exec -T postgres-exporter sh -lc "wget -qO- http://localhost:9187/metrics | grep job_market_"
+```
+
+Le dashboard est cree automatiquement dans le dossier Grafana `Job Market`:
+- `Job Market ETL - Monitoring`
+
+Si tu veux tester manuellement dans Explore (datasource Prometheus):
+
+```promql
+job_market_raw_api_count_value
+```
+
+```promql
+job_market_raw_scrap_count_value
+```
+
+```promql
+job_market_postgres_count_value
+```
+
 ## 13) Troubleshooting rapide
 
 ### Aucun DAG visible dans Airflow UI

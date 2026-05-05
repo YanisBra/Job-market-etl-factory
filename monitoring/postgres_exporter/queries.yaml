@@ -1,0 +1,35 @@
+job_market_raw_api_count:
+  query: |
+    SELECT COALESCE(raw_api_count, 0) AS value
+    FROM etl_metrics
+    ORDER BY run_ts DESC
+    LIMIT 1;
+  master: true
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Latest raw-api object count recorded by ETL"
+
+job_market_raw_scrap_count:
+  query: |
+    SELECT COALESCE(raw_scrap_count, 0) AS value
+    FROM etl_metrics
+    ORDER BY run_ts DESC
+    LIMIT 1;
+  master: true
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Latest raw-scrap object count recorded by ETL"
+
+job_market_postgres_count:
+  query: |
+    SELECT COALESCE(postgres_count, 0) AS value
+    FROM etl_metrics
+    ORDER BY run_ts DESC
+    LIMIT 1;
+  master: true
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Latest offers_unified row count recorded by ETL"

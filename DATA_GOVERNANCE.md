@@ -55,9 +55,33 @@ Ce qu'il fait:
 - deduplication sur:
   - `source + source_offer_id + external_url`
 
-Chargement SQL:
-- `src/load_to_postgres.py`
-- upsert dans `offers_unified` (mise a jour si deja present)
+### 4.1) Dictionnaire de données (Table `offers_unified`)
+
+| Colonne | Type | Description | Mapping France Travail | Mapping WTTJ |
+| :--- | :--- | :--- | :--- | :--- |
+| `source` | TEXT | Origine de la donnée | 'france_travail' | 'welcome_to_the_jungle' |
+| `source_offer_id` | TEXT | ID technique chez le partenaire | `id` | `id` (format WTTJ\_...) |
+| `external_url` | TEXT | Lien direct vers l'offre | `origineOffre.urlOrigine` | `origineOffre.urlOrigine` |
+| `title` | TEXT | Intitulé du poste | `intitule` | `intitule` |
+| `company_name` | TEXT | Nom de l'entreprise | `entreprise.nom` | `entreprise.nom` |
+| `city` | TEXT | Ville du poste | `lieuTravail.commune` | `lieuTravail.commune` |
+| `postal_code` | TEXT | Code postal | `lieuTravail.codePostal` | `lieuTravail.codePostal` |
+| `contract_type` | TEXT | Type de contrat normalisé | `typeContrat` | `typeContrat` |
+| `alternance` | BOOL | Flag alternance/apprentissage | `alternance` (bool) | `alternance` (bool) |
+| `description` | TEXT | Texte complet de l'offre | `description` | `description` |
+| `salary_label` | TEXT | Salaire au format texte | `salaire.libelle` | `salaire.libelle` |
+| `salary_min` | FLOAT | Salaire minimum (si dispo) | N/A | `salaire.min` |
+| `salary_max` | FLOAT | Salaire maximum (si dispo) | N/A | `salaire.max` |
+| `experience_required`| TEXT | Niveau d'expérience attendu | `experienceExige` | `experienceRequise` |
+| `education_level` | TEXT | Niveau d'étude requis | `niveauFormationLibelle`| `niveauEtude` |
+| `created_at` | TEXT | Date de création de l'offre | `dateCreation` | `dateCreation` |
+| `raw_offer` | JSONB | Donnée brute complète (pour audit)| Objet complet | Objet complet |
+
+### 4.2) Logique de Concaténation et Unification
+Le projet utilise une approche de **Schéma à la Lecture (Schema-on-read)** :
+1. **Extraction** : Chaque source est stockée dans son format propre dans le Data Lake (MinIO).
+2. **Alignement** : Le script `transform_offers.py` mappe les champs sémantiquement proches (ex: `experienceExige` vs `experienceRequise`) vers une colonne unique dans Postgres.
+3. **Consolidation** : En cas de doublons détectés par la clé unique, l'offre la plus récente écrase la précédente (UPSERT), garantissant une table finale propre sans perte de données historiques (grâce au bucket MinIO qui garde tout).
 
 ## 5) Regles qualite obligatoires
 - `source`, `source_offer_id`, `title` non vides

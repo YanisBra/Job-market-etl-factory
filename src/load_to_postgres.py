@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import psycopg2
+from minio import Minio
 from psycopg2.extras import Json, execute_batch
 
 
@@ -70,6 +71,18 @@ def create_table_sql() -> str:
         raw_offer JSONB NOT NULL,
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         UNIQUE (source, source_offer_id, external_url)
+    );
+    """
+
+
+def create_metrics_table_sql() -> str:
+    return """
+    CREATE TABLE IF NOT EXISTS etl_metrics (
+        id BIGSERIAL PRIMARY KEY,
+        run_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        raw_api_count INTEGER NOT NULL,
+        raw_scrap_count INTEGER NOT NULL,
+        postgres_count INTEGER NOT NULL
     );
     """
 
@@ -139,6 +152,51 @@ def upsert_sql() -> str:
     """
 
 
+def insert_metrics_sql() -> str:
+    return """
+    INSERT INTO etl_metrics (raw_api_count, raw_scrap_count, postgres_count)
+    VALUES (%(raw_api_count)s, %(raw_scrap_count)s, %(postgres_count)s);
+    """
+
+
+def minio_client() -> Minio:
+    endpoint = os.environ.get("MINIO_ENDPOINT", "localhost:9000")
+    access_key = os.environ.get("MINIO_ROOT_USER", "admin")
+    secret_key = os.environ.get("MINIO_ROOT_PASSWORD", "change_me")
+    secure = os.environ.get("MINIO_SECURE", "false").lower() == "true"
+    return Minio(
+        endpoint,
+        access_key=access_key,
+        secret_key=secret_key,
+        secure=secure,
+    )
+
+
+def count_bucket_objects(client: Minio, bucket_name: str) -> int:
+    try:
+        return sum(1 for _ in client.list_objects(bucket_name, recursive=True))
+    except Exception:
+        return 0
+
+
+def count_raw_minio_objects() -> tuple[int, int]:
+    bucket_api = os.environ.get("MINIO_BUCKET_RAW_API", "raw-api")
+    bucket_scrap = os.environ.get("MINIO_BUCKET_RAW_SCRAP", "raw-scrap")
+    try:
+        client = minio_client()
+        raw_api_count = count_bucket_objects(client, bucket_api)
+        raw_scrap_count = count_bucket_objects(client, bucket_scrap)
+        return raw_api_count, raw_scrap_count
+    except Exception:
+        return 0, 0
+
+
+def count_postgres_rows(cur: Any) -> int:
+    cur.execute("SELECT COUNT(*) FROM offers_unified;")
+    row = cur.fetchone()
+    return int(row[0]) if row else 0
+
+
 def build_rows(offers: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for offer in offers:
@@ -185,16 +243,32 @@ def main() -> int:
         payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
         offers = payload.get("offers", [])
         rows = build_rows(offers)
+        raw_api_count, raw_scrap_count = count_raw_minio_objects()
 
         conn = psycopg2.connect(**pg_connection_params())
         try:
             with conn, conn.cursor() as cur:
                 cur.execute(create_table_sql())
+                cur.execute(create_metrics_table_sql())
                 execute_batch(cur, upsert_sql(), rows, page_size=200)
+                postgres_count = count_postgres_rows(cur)
+                cur.execute(
+                    insert_metrics_sql(),
+                    {
+                        "raw_api_count": raw_api_count,
+                        "raw_scrap_count": raw_scrap_count,
+                        "postgres_count": postgres_count,
+                    },
+                )
         finally:
             conn.close()
 
-        print(f"Chargement Postgres termine: {len(rows)} lignes upsert.")
+        print(
+            "Chargement Postgres termine: "
+            f"{len(rows)} lignes upsert | "
+            f"raw_api_count={raw_api_count} raw_scrap_count={raw_scrap_count} "
+            f"postgres_count={postgres_count}"
+        )
         return 0
     except Exception as exc:
         print(f"Erreur chargement Postgres: {exc}")
