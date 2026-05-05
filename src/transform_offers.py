@@ -57,6 +57,22 @@ class OfferTransformer:
         value = offer.get("alternance")
         return value if isinstance(value, bool) else False
 
+    def _map_ft_contract_type(self, code: str | None) -> str | None:
+        if not code:
+            return None
+        mapping = {
+            "CDI": "CDI",
+            "CDD": "CDD",
+            "MIS": "Intérim",
+            "SAI": "Saisonnier",
+            "LIB": "Indépendant",
+            "FRA": "Franchise",
+            "CCE": "CDD Court",
+            "DIN": "CDI (Inter)",
+            "DDI": "CDD (Inter)",
+        }
+        return mapping.get(code.upper(), code)
+
     def _normalize_france_travail(self, offers: Any) -> list[dict[str, Any]]:
         if not isinstance(offers, list):
             return []
@@ -73,7 +89,8 @@ class OfferTransformer:
                 else self._clean_text(salary_raw)
             )
 
-            contract_type = self._clean_text(offer.get("typeContrat"))
+            contract_type_raw = self._clean_text(offer.get("typeContrat"))
+            contract_type = self._map_ft_contract_type(contract_type_raw)
             alternance = self._alternance_flag(offer)
 
             rows.append(

@@ -83,6 +83,21 @@ Le projet utilise une approche de **Schéma à la Lecture (Schema-on-read)** :
 2. **Alignement** : Le script `transform_offers.py` mappe les champs sémantiquement proches (ex: `experienceExige` vs `experienceRequise`) vers une colonne unique dans Postgres.
 3. **Consolidation** : En cas de doublons détectés par la clé unique, l'offre la plus récente écrase la précédente (UPSERT), garantissant une table finale propre sans perte de données historiques (grâce au bucket MinIO qui garde tout).
 
+### 4.3) Règles de Normalisation (Mapping des Contrats)
+Pour garantir la lisibilité des analyses (Grafana/SQL), les codes techniques de France Travail sont convertis :
+
+| Code Source | Libellé Unifié |
+| :--- | :--- |
+| `CDI` | CDI |
+| `CDD` | CDD |
+| `MIS` | Intérim |
+| `SAI` | Saisonnier |
+| `LIB` | Indépendant |
+| `FRA` | Franchise |
+| `CCE` | CDD Court |
+| `DIN` | CDI (Inter) |
+| `DDI` | CDD (Inter) |
+
 ## 5) Regles qualite obligatoires
 - `source`, `source_offer_id`, `title` non vides
 - `source` dans `{france_travail, welcome_to_the_jungle}`
