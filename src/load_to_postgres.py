@@ -12,6 +12,7 @@ from psycopg2.extras import Json, execute_batch
 
 
 def load_dotenv_file(path: str = ".env") -> None:
+    """Charge les variables d'environnement depuis un fichier .env."""
     env_path = Path(path)
     if not env_path.exists():
         return
@@ -33,6 +34,7 @@ def load_dotenv_file(path: str = ".env") -> None:
 
 
 def pg_connection_params() -> dict[str, Any]:
+    """Récupère les paramètres de connexion PostgreSQL depuis l'environnement."""
     return {
         "host": os.environ.get("PGHOST", "localhost"),
         "port": int(os.environ.get("PGPORT", "5433")),
@@ -47,6 +49,7 @@ def pg_connection_params() -> dict[str, Any]:
 
 
 def create_table_sql() -> str:
+    """Retourne le SQL pour créer la table des offres unifiées."""
     return """
     CREATE TABLE IF NOT EXISTS offers_unified (
         id BIGSERIAL PRIMARY KEY,
@@ -76,6 +79,7 @@ def create_table_sql() -> str:
 
 
 def create_metrics_table_sql() -> str:
+    """Retourne le SQL pour créer la table de suivi des métriques ETL."""
     return """
     CREATE TABLE IF NOT EXISTS etl_metrics (
         id BIGSERIAL PRIMARY KEY,
@@ -88,6 +92,10 @@ def create_metrics_table_sql() -> str:
 
 
 def upsert_sql() -> str:
+    """
+    Retourne la requête UPSERT (Insert or Update) pour PostgreSQL.
+    Gère les doublons basés sur la clé unique (source, source_offer_id, external_url).
+    """
     return """
     INSERT INTO offers_unified (
         source,
@@ -153,6 +161,7 @@ def upsert_sql() -> str:
 
 
 def insert_metrics_sql() -> str:
+    """Requête SQL pour insérer un nouveau point de métriques."""
     return """
     INSERT INTO etl_metrics (raw_api_count, raw_scrap_count, postgres_count)
     VALUES (%(raw_api_count)s, %(raw_scrap_count)s, %(postgres_count)s);
@@ -160,6 +169,7 @@ def insert_metrics_sql() -> str:
 
 
 def minio_client() -> Minio:
+    """Initialise et retourne un client Minio pour le suivi des métriques."""
     endpoint = os.environ.get("MINIO_ENDPOINT", "localhost:9000")
     access_key = os.environ.get("MINIO_ROOT_USER", "admin")
     secret_key = os.environ.get("MINIO_ROOT_PASSWORD", "change_me")
@@ -173,6 +183,7 @@ def minio_client() -> Minio:
 
 
 def count_bucket_objects(client: Minio, bucket_name: str) -> int:
+    """Compte récursivement le nombre d'objets dans un bucket MinIO."""
     try:
         return sum(1 for _ in client.list_objects(bucket_name, recursive=True))
     except Exception:
@@ -180,6 +191,7 @@ def count_bucket_objects(client: Minio, bucket_name: str) -> int:
 
 
 def count_raw_minio_objects() -> tuple[int, int]:
+    """Récupère le nombre d'objets bruts stockés dans MinIO (API vs Scraping)."""
     bucket_api = os.environ.get("MINIO_BUCKET_RAW_API", "raw-api")
     bucket_scrap = os.environ.get("MINIO_BUCKET_RAW_SCRAP", "raw-scrap")
     try:
@@ -192,12 +204,14 @@ def count_raw_minio_objects() -> tuple[int, int]:
 
 
 def count_postgres_rows(cur: Any) -> int:
+    """Compte le nombre total d'offres actuellement en base de données."""
     cur.execute("SELECT COUNT(*) FROM offers_unified;")
     row = cur.fetchone()
     return int(row[0]) if row else 0
 
 
 def build_rows(offers: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Prépare les données JSON pour l'insertion SQL (mapping champs + conversion JSONB)."""
     rows: list[dict[str, Any]] = []
     for offer in offers:
         if not isinstance(offer, dict):
@@ -228,6 +242,17 @@ def build_rows(offers: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def main() -> int:
+    """
+    Point d'entrée principal pour le chargement vers Postgres.
+    
+    Étapes :
+    1. Lecture du fichier unifié JSON.
+    2. Récupération des métriques MinIO.
+    3. Connexion à Postgres.
+    4. Création des tables si nécessaire.
+    5. Insertion en masse via UPSERT.
+    6. Enregistrement des métriques ETL.
+    """
     parser = argparse.ArgumentParser(
         description="Charge les offres transformees vers Postgres (UPSERT)."
     )
@@ -243,14 +268,21 @@ def main() -> int:
         payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
         offers = payload.get("offers", [])
         rows = build_rows(offers)
+        
+        # Collecte des métriques avant insertion
         raw_api_count, raw_scrap_count = count_raw_minio_objects()
 
         conn = psycopg2.connect(**pg_connection_params())
         try:
             with conn, conn.cursor() as cur:
+                # Préparation du schéma
                 cur.execute(create_table_sql())
                 cur.execute(create_metrics_table_sql())
+                
+                # Insertion en batch pour la performance
                 execute_batch(cur, upsert_sql(), rows, page_size=200)
+                
+                # Mise à jour des métriques finalisées
                 postgres_count = count_postgres_rows(cur)
                 cur.execute(
                     insert_metrics_sql(),

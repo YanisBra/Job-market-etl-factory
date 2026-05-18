@@ -16,6 +16,7 @@ from urllib import error, parse, request
 
 
 def load_dotenv_file(path: str = ".env") -> None:
+    """Charge manuellement les variables d'environnement depuis un fichier .env."""
     env_path = Path(path)
     if not env_path.exists():
         return
@@ -41,6 +42,7 @@ def load_dotenv_file(path: str = ".env") -> None:
 
 @dataclass
 class MinioConfig:
+    """Configuration pour la connexion à MinIO."""
     endpoint: str
     access_key: str
     secret_key: str
@@ -49,6 +51,7 @@ class MinioConfig:
 
     @classmethod
     def from_env(cls) -> "MinioConfig":
+        """Crée une configuration MinIO à partir des variables d'environnement."""
         env = os.environ
         access_key = env.get("MINIO_ROOT_USER", "").strip()
         secret_key = env.get("MINIO_ROOT_PASSWORD", "").strip()
@@ -76,6 +79,7 @@ class MinioConfig:
 
 
 class MinioRawStorage:
+    """Gère le stockage des données brutes (JSON) dans MinIO."""
     def __init__(self, config: MinioConfig, minio_client: Any | None = None) -> None:
         self.config = config
         if minio_client is not None:
@@ -97,6 +101,7 @@ class MinioRawStorage:
         )
 
     def _ensure_bucket(self) -> None:
+        """Vérifie l'existence du bucket et le crée si nécessaire."""
         try:
             if not self.client.bucket_exists(self.config.bucket):
                 self.client.make_bucket(self.config.bucket)
@@ -108,6 +113,7 @@ class MinioRawStorage:
     def upload_raw_json(
         self, payload: dict[str, Any], source: str = "welcome_to_the_jungle"
     ) -> str:
+        """Upload un dictionnaire JSON vers MinIO avec un partitionnement par date."""
         now = datetime.now(timezone.utc)
         object_key = f"{source}/{now:%Y/%m/%d}/offers_{now:%Y%m%dT%H%M%SZ}.json"
         body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
@@ -129,6 +135,7 @@ class MinioRawStorage:
 
 @dataclass
 class WTTJScraperConfig:
+    """Configuration spécifique au scraper Welcome to the Jungle."""
     base_url: str
     timeout_seconds: int
     user_agent: str
@@ -147,6 +154,7 @@ class WTTJScraperConfig:
 
 
 class JsonLdParser(HTMLParser):
+    """Parseur HTML spécialisé pour extraire les blocs <script type='application/ld+json'>."""
     def __init__(self) -> None:
         super().__init__()
         self._inside_target_script = False
@@ -170,6 +178,7 @@ class JsonLdParser(HTMLParser):
 
 
 class HtmlTextExtractor(HTMLParser):
+    """Parseur utilitaire pour extraire le texte brut d'une chaîne HTML (nettoyage de balises)."""
     def __init__(self) -> None:
         super().__init__()
         self._chunks: list[str] = []
@@ -185,10 +194,12 @@ class HtmlTextExtractor(HTMLParser):
 
 
 class WelcomeToTheJungleScraper:
+    """Cœur du scraper : gère les requêtes HTTP et l'extraction des données JSON-LD."""
     def __init__(self, config: WTTJScraperConfig) -> None:
         self.config = config
 
     def fetch_search_page(self, query: str, page: int = 1) -> str:
+        """Récupère le code HTML de la page de recherche pour une requête et une page données."""
         params = parse.urlencode({"query": query, "page": page})
         url = f"{self.config.base_url}/fr/jobs?{params}"
         headers = {"User-Agent": self.config.user_agent}
@@ -208,6 +219,7 @@ class WelcomeToTheJungleScraper:
             raise RuntimeError(f"Echec technique scraping WTTJ: {exc}") from exc
 
     def fetch_job_page(self, job_url: str) -> str:
+        """Récupère le code HTML de la page de détail d'une offre."""
         headers = {"User-Agent": self.config.user_agent}
         req = request.Request(job_url, headers=headers)
 
@@ -229,6 +241,7 @@ class WelcomeToTheJungleScraper:
             ) from exc
 
     def _normalize_jobposting(self, job: dict[str, Any]) -> dict[str, Any]:
+        """Convertit un objet JSON-LD 'JobPosting' brut en dictionnaire normalisé pour le pipeline."""
         hiring_org = job.get("hiringOrganization") or {}
         location = job.get("jobLocation") or {}
         if isinstance(location, list):
@@ -282,11 +295,13 @@ class WelcomeToTheJungleScraper:
         }
 
     def _build_offer_id(self, url: Any, title: Any) -> str:
+        """Génère un ID stable basé sur le hash de l'URL."""
         raw = str(url or title or "")
         digest = hashlib.sha1(raw.encode("utf-8")).hexdigest()[:8].upper()
         return f"WTTJ_{digest}"
 
     def _build_lieu_libelle(self, city: Any, country: Any) -> str | None:
+        """Formate le libellé de localisation."""
         city_s = str(city).strip() if city else ""
         country_s = str(country).strip() if country else ""
         if city_s and country_s:
@@ -298,6 +313,7 @@ class WelcomeToTheJungleScraper:
         return None
 
     def _map_contract_type(self, employment_type: Any) -> str | None:
+        """Mappe les types d'emploi WTTJ vers des libellés standards (CDI, CDD, etc.)."""
         if not employment_type:
             return None
         value = str(employment_type).strip().upper()
@@ -311,6 +327,7 @@ class WelcomeToTheJungleScraper:
         return mapping.get(value, value)
 
     def _is_alternance(self, employment_type: Any) -> bool:
+        """Détecte si l'offre est une alternance."""
         if isinstance(employment_type, str):
             return employment_type.strip().upper() == "CONTRACTOR"
         if isinstance(employment_type, list):
@@ -321,6 +338,7 @@ class WelcomeToTheJungleScraper:
         return False
 
     def _extract_requirement_text(self, value: Any) -> str | None:
+        """Extrait de manière récursive le texte des pré-requis (expérience, éducation)."""
         if value is None:
             return None
         if isinstance(value, str):
@@ -355,6 +373,7 @@ class WelcomeToTheJungleScraper:
         return None
 
     def _normalize_education_level(self, raw: str) -> str:
+        """Mappe les niveaux d'études anglais vers le standard français (Bac+X)."""
         mapping = {
             "high school": "Bac",
             "associate degree": "Bac+2",
@@ -367,6 +386,7 @@ class WelcomeToTheJungleScraper:
         return mapping.get(key, raw)
 
     def _extract_salary(self, base_salary: Any) -> dict[str, Any] | None:
+        """Extrait les informations de salaire du dictionnaire JSON-LD."""
         if not base_salary:
             return None
 
@@ -409,6 +429,7 @@ class WelcomeToTheJungleScraper:
         return None
 
     def _strip_html(self, value: str) -> str:
+        """Supprime les balises HTML d'une chaîne de caractères."""
         if not value:
             return ""
         parser = HtmlTextExtractor()
@@ -417,6 +438,7 @@ class WelcomeToTheJungleScraper:
         return parser.text()
 
     def _is_jobposting_type(self, type_value: Any) -> bool:
+        """Vérifie si le type JSON-LD correspond à une offre d'emploi."""
         if isinstance(type_value, str):
             return type_value.strip().lower() == "jobposting"
         if isinstance(type_value, list):
@@ -427,6 +449,7 @@ class WelcomeToTheJungleScraper:
         return False
 
     def _nested_value(self, payload: dict[str, Any], path: str) -> Any:
+        """Récupère une valeur dans un dictionnaire imbriqué via un chemin pointé (ex: 'lieu.commune')."""
         current: Any = payload
         for key in path.split("."):
             if not isinstance(current, dict):
@@ -435,6 +458,7 @@ class WelcomeToTheJungleScraper:
         return current
 
     def extract_offers(self, html: str) -> list[dict[str, Any]]:
+        """Extrait toutes les offres d'emploi détectées dans le code HTML (via JSON-LD)."""
         parser = JsonLdParser()
         parser.feed(html)
 
@@ -472,6 +496,7 @@ class WelcomeToTheJungleScraper:
         return list(dedup.values())
 
     def _extract_first_jobposting_from_html(self, html: str) -> dict[str, Any] | None:
+        """Extrait la première offre d'emploi JobPosting d'un contenu HTML."""
         parser = JsonLdParser()
         parser.feed(html)
 
@@ -497,6 +522,7 @@ class WelcomeToTheJungleScraper:
         return None
 
     def _needs_detail_enrichment(self, offer: dict[str, Any]) -> bool:
+        """Détermine si une offre a besoin d'être enrichie via sa page de détail."""
         # Si plusieurs champs sont absents, on considere l'offre incomplète.
         missing_fields = [
             field
@@ -520,6 +546,7 @@ class WelcomeToTheJungleScraper:
     def _merge_offer(
         self, base_offer: dict[str, Any], detail_offer: dict[str, Any]
     ) -> dict[str, Any]:
+        """Fusionne les informations d'une offre de base avec celles de sa page de détail."""
         merged = {**base_offer}
         for key, value in detail_offer.items():
             if isinstance(value, dict) and isinstance(merged.get(key), dict):
@@ -536,6 +563,7 @@ class WelcomeToTheJungleScraper:
     def enrich_offers_from_detail_pages(
         self, offers: list[dict[str, Any]], delay_seconds: float = 0.2
     ) -> list[dict[str, Any]]:
+        """Parcourt les offres et va chercher les détails sur leurs pages respectives si nécessaire."""
         enriched: list[dict[str, Any]] = []
         for offer in offers:
             if not self._needs_detail_enrichment(offer):
@@ -560,6 +588,7 @@ class WelcomeToTheJungleScraper:
         return enriched
 
     def _fallback_extract_links(self, html: str) -> list[dict[str, Any]]:
+        """Méthode de secours pour extraire les liens d'offres si le JSON-LD est manquant."""
         links: list[dict[str, Any]] = []
         marker = "/fr/companies/"
         start = 0
@@ -610,6 +639,7 @@ class WelcomeToTheJungleScraper:
 
 
 class WTTJCollector:
+    """Orchestrateur de la collecte : gère la pagination et l'export final."""
     def __init__(self, scraper: WelcomeToTheJungleScraper) -> None:
         self.scraper = scraper
 
@@ -621,6 +651,7 @@ class WTTJCollector:
         output_path: Path,
         detail_delay_seconds: float = 0.2,
     ) -> Path:
+        """Lance la collecte sur plusieurs pages et enregistre le résultat dans un JSON."""
         pages_to_collect = max(1, max_pages)
         all_offers: list[dict[str, Any]] = []
         dedup_by_url: dict[str, dict[str, Any]] = {}
@@ -628,11 +659,13 @@ class WTTJCollector:
         for current_page in range(page, page + pages_to_collect):
             html = self.scraper.fetch_search_page(query=query, page=current_page)
             offers = self.scraper.extract_offers(html)
+            # Enrichissement (optionnel, selon le besoin détecté automatiquement)
             offers = self.scraper.enrich_offers_from_detail_pages(
                 offers, delay_seconds=detail_delay_seconds
             )
             all_offers.extend(offers)
 
+        # Dédoublonnage final basé sur l'URL de l'offre
         for offer in all_offers:
             key = self.scraper._nested_value(
                 offer, "origineOffre.urlOrigine"
@@ -656,13 +689,14 @@ class WTTJCollector:
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
+    """Configure les arguments CLI pour le scraper."""
     parser = argparse.ArgumentParser(
         description="Scraping des offres Welcome to the Jungle."
     )
-    parser.add_argument("--query", default="")
-    parser.add_argument("--page", type=int, default=1)
-    parser.add_argument("--max-pages", type=int, default=3)
-    parser.add_argument("--detail-delay-seconds", type=float, default=0.2)
+    parser.add_argument("--query", default="", help="Mots-clés de recherche")
+    parser.add_argument("--page", type=int, default=1, help="Page de départ")
+    parser.add_argument("--max-pages", type=int, default=3, help="Nombre de pages à scraper")
+    parser.add_argument("--detail-delay-seconds", type=float, default=0.2, help="Délai entre requêtes de détail")
     parser.add_argument(
         "--output",
         default="data/raw/wttj_offers.json",
@@ -677,6 +711,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    """Point d'entrée principal : charge la config, lance le scraper et l'upload MinIO."""
     args = build_arg_parser().parse_args()
     try:
         load_dotenv_file()

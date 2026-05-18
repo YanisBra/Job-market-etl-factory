@@ -72,6 +72,7 @@ python -m pip install -r requirements.txt
 
 Ensuite, utilise toujours:
 - `.venv/bin/python ...`
+- 
 - ou active le venv avec `source .venv/bin/activate`
 - Windows: `.venv\Scripts\python.exe ...`
 
