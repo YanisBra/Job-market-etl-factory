@@ -43,6 +43,7 @@ def load_dotenv_file(path: str = ".env") -> None:
 @dataclass
 class MinioConfig:
     """Configuration pour la connexion à MinIO."""
+
     endpoint: str
     access_key: str
     secret_key: str
@@ -80,6 +81,7 @@ class MinioConfig:
 
 class MinioRawStorage:
     """Gère le stockage des données brutes (JSON) dans MinIO."""
+
     def __init__(self, config: MinioConfig, minio_client: Any | None = None) -> None:
         self.config = config
         if minio_client is not None:
@@ -136,6 +138,7 @@ class MinioRawStorage:
 @dataclass
 class WTTJScraperConfig:
     """Configuration spécifique au scraper Welcome to the Jungle."""
+
     base_url: str
     timeout_seconds: int
     user_agent: str
@@ -155,6 +158,7 @@ class WTTJScraperConfig:
 
 class JsonLdParser(HTMLParser):
     """Parseur HTML spécialisé pour extraire les blocs <script type='application/ld+json'>."""
+
     def __init__(self) -> None:
         super().__init__()
         self._inside_target_script = False
@@ -179,6 +183,7 @@ class JsonLdParser(HTMLParser):
 
 class HtmlTextExtractor(HTMLParser):
     """Parseur utilitaire pour extraire le texte brut d'une chaîne HTML (nettoyage de balises)."""
+
     def __init__(self) -> None:
         super().__init__()
         self._chunks: list[str] = []
@@ -195,6 +200,7 @@ class HtmlTextExtractor(HTMLParser):
 
 class WelcomeToTheJungleScraper:
     """Cœur du scraper : gère les requêtes HTTP et l'extraction des données JSON-LD."""
+
     def __init__(self, config: WTTJScraperConfig) -> None:
         self.config = config
 
@@ -640,6 +646,7 @@ class WelcomeToTheJungleScraper:
 
 class WTTJCollector:
     """Orchestrateur de la collecte : gère la pagination et l'export final."""
+
     def __init__(self, scraper: WelcomeToTheJungleScraper) -> None:
         self.scraper = scraper
 
@@ -695,8 +702,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--query", default="", help="Mots-clés de recherche")
     parser.add_argument("--page", type=int, default=1, help="Page de départ")
-    parser.add_argument("--max-pages", type=int, default=3, help="Nombre de pages à scraper")
-    parser.add_argument("--detail-delay-seconds", type=float, default=0.2, help="Délai entre requêtes de détail")
+    parser.add_argument(
+        "--max-pages", type=int, default=3, help="Nombre de pages à scraper"
+    )
+    parser.add_argument(
+        "--detail-delay-seconds",
+        type=float,
+        default=0.2,
+        help="Délai entre requêtes de détail",
+    )
     parser.add_argument(
         "--output",
         default="data/raw/wttj_offers.json",

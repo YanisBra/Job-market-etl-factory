@@ -14,6 +14,7 @@ from urllib import error, parse, request
 @dataclass
 class FranceTravailConfig:
     """Configuration pour l'accès à l'API France Travail (ex-Pôle Emploi)."""
+
     client_id: str
     client_secret: str
     scope: str
@@ -59,6 +60,7 @@ class FranceTravailConfig:
 @dataclass
 class MinioConfig:
     """Configuration pour la connexion à MinIO."""
+
     endpoint: str
     access_key: str
     secret_key: str
@@ -120,6 +122,7 @@ def load_dotenv_file(path: str = ".env") -> None:
 
 class FranceTravailApiClient:
     """Client HTTP pour l'API France Travail (OAuth2 + Recherche d'offres)."""
+
     def __init__(self, config: FranceTravailConfig) -> None:
         self.config = config
 
@@ -205,6 +208,7 @@ class FranceTravailApiClient:
 
 class MinioRawStorage:
     """Gère le stockage des données brutes (JSON) dans MinIO."""
+
     def __init__(self, config: MinioConfig, minio_client: Any | None = None) -> None:
         self.config = config
         if minio_client is not None:
@@ -260,6 +264,7 @@ class MinioRawStorage:
 
 class OfferCollector:
     """Orchestrateur de la collecte : gère la pagination et le dédoublonnage."""
+
     def __init__(self, client: FranceTravailApiClient) -> None:
         self.client = client
 
@@ -277,13 +282,13 @@ class OfferCollector:
         size = max(1, page_size)
         offers: list[dict[str, Any]] = []
         ranges: list[str] = []
-        
+
         for page_index in range(page_count):
             start = page_index * size
             end = start + size - 1
             current_range = f"{start}-{end}"
             ranges.append(current_range)
-            
+
             # Appel API pour la page courante
             page_results = self.client.search_offers(
                 keywords=keywords,
@@ -315,7 +320,7 @@ class OfferCollector:
             "total": len(offers),
             "offers": offers,
         }
-        
+
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(
             json.dumps(output, ensure_ascii=False, indent=2),
@@ -330,10 +335,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
         description="Collecte des offres d'emploi via l'API France Travail."
     )
     parser.add_argument("--keywords", default="", help="Mots-clés de recherche")
-    parser.add_argument("--location", default="", help="Lieux (codes INSEE, départements, régions)")
-    parser.add_argument("--pages", type=int, default=3, help="Nombre de pages de 50 offres")
-    parser.add_argument("--page-size", type=int, default=50, help="Nombre d'offres par page (max 150)")
-    parser.add_argument("--contract-type", default=None, help="Types de contrat (CDI, CDD, etc.)")
+    parser.add_argument(
+        "--location", default="", help="Lieux (codes INSEE, départements, régions)"
+    )
+    parser.add_argument(
+        "--pages", type=int, default=3, help="Nombre de pages de 50 offres"
+    )
+    parser.add_argument(
+        "--page-size", type=int, default=50, help="Nombre d'offres par page (max 150)"
+    )
+    parser.add_argument(
+        "--contract-type", default=None, help="Types de contrat (CDI, CDD, etc.)"
+    )
     parser.add_argument(
         "--output",
         default="data/raw/france_travail_offers.json",
@@ -355,7 +368,7 @@ def main() -> int:
         config = FranceTravailConfig.from_env()
         client = FranceTravailApiClient(config)
         collector = OfferCollector(client)
-        
+
         output_path = collector.collect(
             keywords=args.keywords,
             location=args.location,

@@ -244,7 +244,7 @@ def build_rows(offers: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def main() -> int:
     """
     Point d'entrée principal pour le chargement vers Postgres.
-    
+
     Étapes :
     1. Lecture du fichier unifié JSON.
     2. Récupération des métriques MinIO.
@@ -268,7 +268,7 @@ def main() -> int:
         payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
         offers = payload.get("offers", [])
         rows = build_rows(offers)
-        
+
         # Collecte des métriques avant insertion
         raw_api_count, raw_scrap_count = count_raw_minio_objects()
 
@@ -278,10 +278,10 @@ def main() -> int:
                 # Préparation du schéma
                 cur.execute(create_table_sql())
                 cur.execute(create_metrics_table_sql())
-                
+
                 # Insertion en batch pour la performance
                 execute_batch(cur, upsert_sql(), rows, page_size=200)
-                
+
                 # Mise à jour des métriques finalisées
                 postgres_count = count_postgres_rows(cur)
                 cur.execute(

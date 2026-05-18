@@ -13,20 +13,20 @@ class TransformConfig:
     """Configuration pour le script de transformation."""
 
     france_travail_input: Path  # Chemin vers les données brutes France Travail
-    wttj_input: Path            # Chemin vers les données brutes Welcome to the Jungle
-    output: Path                # Chemin du fichier de sortie unifié
+    wttj_input: Path  # Chemin vers les données brutes Welcome to the Jungle
+    output: Path  # Chemin du fichier de sortie unifié
 
 
 class OfferTransformer:
     """
-    Responsable de la transformation, du nettoyage et de l'unification des offres 
+    Responsable de la transformation, du nettoyage et de l'unification des offres
     provenant de différentes sources (France Travail et Welcome to the Jungle).
     """
 
     def __init__(self, config: TransformConfig) -> None:
         """
         Initialise le transformateur avec la configuration spécifiée.
-        
+
         Args:
             config: Objet de configuration contenant les chemins d'entrée et sortie.
         """
@@ -81,7 +81,7 @@ class OfferTransformer:
 
     def _map_ft_contract_type(self, code: str | None) -> str | None:
         """
-        Traduit les codes techniques de France Travail (MIS, SAI, etc.) 
+        Traduit les codes techniques de France Travail (MIS, SAI, etc.)
         en libellés lisibles pour l'analyse métier.
         """
         if not code:
@@ -171,7 +171,7 @@ class OfferTransformer:
             salary_raw = (
                 offer.get("salaire") if isinstance(offer.get("salaire"), dict) else {}
             )
-            
+
             # Normalisation des types de contrats
             contract_type = self._clean_text(offer.get("typeContrat"))
             alternance = self._alternance_flag(offer)
@@ -239,10 +239,10 @@ class OfferTransformer:
 def build_arg_parser() -> argparse.ArgumentParser:
     """
     Configure le parseur d'arguments pour le script de transformation.
-    
-    Définit les chemins par défaut pour les entrées France Travail et WTTJ, 
+
+    Définit les chemins par défaut pour les entrées France Travail et WTTJ,
     ainsi que pour le fichier de sortie unifié.
-    
+
     Returns:
         argparse.ArgumentParser: Le parseur configuré.
     """
@@ -270,9 +270,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main() -> int:
     """
     Point d'entrée principal du script de transformation.
-    
+
     Initialise la configuration, exécute le transformateur et gère les erreurs.
-    
+
     Returns:
         int: 0 si succès, 1 si erreur.
     """
