@@ -57,6 +57,7 @@ def create_table_sql() -> str:
         source_offer_id TEXT NOT NULL,
         external_url TEXT,
         title TEXT,
+        title_clean TEXT,
         company_name TEXT,
         city TEXT,
         postal_code TEXT,
@@ -65,10 +66,12 @@ def create_table_sql() -> str:
         alternance BOOLEAN NOT NULL DEFAULT FALSE,
         description TEXT,
         salary_label TEXT,
+        salary_annual DOUBLE PRECISION,
         salary_min DOUBLE PRECISION,
         salary_max DOUBLE PRECISION,
         salary_currency TEXT,
         experience_required TEXT,
+        experience_level TEXT,
         education_level TEXT,
         created_at TEXT,
         raw_offer JSONB NOT NULL,
@@ -85,6 +88,8 @@ def create_metrics_table_sql() -> str:
         id BIGSERIAL PRIMARY KEY,
         run_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         raw_api_count INTEGER NOT NULL,
+        raw_wttj_count INTEGER NOT NULL DEFAULT 0,
+        raw_hw_count INTEGER NOT NULL DEFAULT 0,
         raw_scrap_count INTEGER NOT NULL,
         postgres_count INTEGER NOT NULL
     );
@@ -102,6 +107,7 @@ def upsert_sql() -> str:
         source_offer_id,
         external_url,
         title,
+        title_clean,
         company_name,
         city,
         postal_code,
@@ -110,10 +116,12 @@ def upsert_sql() -> str:
         alternance,
         description,
         salary_label,
+        salary_annual,
         salary_min,
         salary_max,
         salary_currency,
         experience_required,
+        experience_level,
         education_level,
         created_at,
         raw_offer
@@ -122,6 +130,7 @@ def upsert_sql() -> str:
         %(source_offer_id)s,
         %(external_url)s,
         %(title)s,
+        %(title_clean)s,
         %(company_name)s,
         %(city)s,
         %(postal_code)s,
@@ -130,10 +139,12 @@ def upsert_sql() -> str:
         %(alternance)s,
         %(description)s,
         %(salary_label)s,
+        %(salary_annual)s,
         %(salary_min)s,
         %(salary_max)s,
         %(salary_currency)s,
         %(experience_required)s,
+        %(experience_level)s,
         %(education_level)s,
         %(created_at)s,
         %(raw_offer)s
@@ -141,6 +152,7 @@ def upsert_sql() -> str:
     ON CONFLICT (source, source_offer_id, external_url)
     DO UPDATE SET
         title = EXCLUDED.title,
+        title_clean = EXCLUDED.title_clean,
         company_name = EXCLUDED.company_name,
         city = EXCLUDED.city,
         postal_code = EXCLUDED.postal_code,
@@ -149,10 +161,12 @@ def upsert_sql() -> str:
         alternance = EXCLUDED.alternance,
         description = EXCLUDED.description,
         salary_label = EXCLUDED.salary_label,
+        salary_annual = EXCLUDED.salary_annual,
         salary_min = EXCLUDED.salary_min,
         salary_max = EXCLUDED.salary_max,
         salary_currency = EXCLUDED.salary_currency,
         experience_required = EXCLUDED.experience_required,
+        experience_level = EXCLUDED.experience_level,
         education_level = EXCLUDED.education_level,
         created_at = EXCLUDED.created_at,
         raw_offer = EXCLUDED.raw_offer,
@@ -163,8 +177,8 @@ def upsert_sql() -> str:
 def insert_metrics_sql() -> str:
     """Requête SQL pour insérer un nouveau point de métriques."""
     return """
-    INSERT INTO etl_metrics (raw_api_count, raw_scrap_count, postgres_count)
-    VALUES (%(raw_api_count)s, %(raw_scrap_count)s, %(postgres_count)s);
+    INSERT INTO etl_metrics (raw_api_count, raw_wttj_count, raw_hw_count, raw_scrap_count, postgres_count)
+    VALUES (%(raw_api_count)s, %(raw_wttj_count)s, %(raw_hw_count)s, %(raw_scrap_count)s, %(postgres_count)s);
     """
 
 
@@ -182,25 +196,32 @@ def minio_client() -> Minio:
     )
 
 
-def count_bucket_objects(client: Minio, bucket_name: str) -> int:
-    """Compte récursivement le nombre d'objets dans un bucket MinIO."""
+def count_bucket_objects(client: Minio, bucket_name: str, prefix: str | None = None) -> int:
+    """Compte récursivement le nombre d'objets dans un bucket MinIO, optionnellement filtré par préfixe."""
     try:
-        return sum(1 for _ in client.list_objects(bucket_name, recursive=True))
+        return sum(1 for _ in client.list_objects(bucket_name, prefix=prefix, recursive=True))
     except Exception:
         return 0
 
 
-def count_raw_minio_objects() -> tuple[int, int]:
-    """Récupère le nombre d'objets bruts stockés dans MinIO (API vs Scraping)."""
+def count_raw_minio_objects() -> dict[str, int]:
+    """Récupère le nombre d'objets bruts stockés dans MinIO par source."""
     bucket_api = os.environ.get("MINIO_BUCKET_RAW_API", "raw-api")
     bucket_scrap = os.environ.get("MINIO_BUCKET_RAW_SCRAP", "raw-scrap")
     try:
         client = minio_client()
-        raw_api_count = count_bucket_objects(client, bucket_api)
-        raw_scrap_count = count_bucket_objects(client, bucket_scrap)
-        return raw_api_count, raw_scrap_count
+        raw_ft_count = count_bucket_objects(client, bucket_api, prefix="france_travail/")
+        raw_wttj_count = count_bucket_objects(client, bucket_scrap, prefix="welcome_to_the_jungle/")
+        raw_hw_count = count_bucket_objects(client, bucket_scrap, prefix="hellowork/")
+        
+        return {
+            "ft": raw_ft_count,
+            "wttj": raw_wttj_count,
+            "hw": raw_hw_count,
+            "total_scrap": raw_wttj_count + raw_hw_count
+        }
     except Exception:
-        return 0, 0
+        return {"ft": 0, "wttj": 0, "hw": 0, "total_scrap": 0}
 
 
 def count_postgres_rows(cur: Any) -> int:
@@ -221,6 +242,7 @@ def build_rows(offers: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "source_offer_id": offer.get("source_offer_id") or "",
             "external_url": offer.get("external_url"),
             "title": offer.get("title"),
+            "title_clean": offer.get("title_clean"),
             "company_name": offer.get("company_name"),
             "city": offer.get("city"),
             "postal_code": offer.get("postal_code"),
@@ -229,10 +251,12 @@ def build_rows(offers: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "alternance": bool(offer.get("alternance", False)),
             "description": offer.get("description"),
             "salary_label": offer.get("salary_label"),
+            "salary_annual": offer.get("salary_annual"),
             "salary_min": offer.get("salary_min"),
             "salary_max": offer.get("salary_max"),
             "salary_currency": offer.get("salary_currency"),
             "experience_required": offer.get("experience_required"),
+            "experience_level": offer.get("experience_level"),
             "education_level": offer.get("education_level"),
             "created_at": offer.get("created_at"),
             "raw_offer": Json(offer.get("raw_offer", {})),
@@ -250,8 +274,9 @@ def main() -> int:
     2. Récupération des métriques MinIO.
     3. Connexion à Postgres.
     4. Création des tables si nécessaire.
-    5. Insertion en masse via UPSERT.
-    6. Enregistrement des métriques ETL.
+    5. Truncate (Reset) si demandé.
+    6. Insertion en masse via UPSERT.
+    7. Enregistrement des métriques ETL.
     """
     parser = argparse.ArgumentParser(
         description="Charge les offres transformees vers Postgres (UPSERT)."
@@ -260,6 +285,11 @@ def main() -> int:
         "--input",
         default="data/processed/unified_offers.json",
         help="Fichier JSON transforme a charger.",
+    )
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="Supprime toutes les données existantes avant le chargement.",
     )
     args = parser.parse_args()
 
@@ -270,7 +300,7 @@ def main() -> int:
         rows = build_rows(offers)
 
         # Collecte des métriques avant insertion
-        raw_api_count, raw_scrap_count = count_raw_minio_objects()
+        metrics = count_raw_minio_objects()
 
         conn = psycopg2.connect(**pg_connection_params())
         try:
@@ -278,6 +308,18 @@ def main() -> int:
                 # Préparation du schéma
                 cur.execute(create_table_sql())
                 cur.execute(create_metrics_table_sql())
+                
+                # Migration de la table si nécessaire
+                cur.execute("ALTER TABLE offers_unified ADD COLUMN IF NOT EXISTS title_clean TEXT;")
+                cur.execute("ALTER TABLE offers_unified ADD COLUMN IF NOT EXISTS salary_annual DOUBLE PRECISION;")
+                cur.execute("ALTER TABLE offers_unified ADD COLUMN IF NOT EXISTS experience_level TEXT;")
+                cur.execute("ALTER TABLE etl_metrics ADD COLUMN IF NOT EXISTS raw_wttj_count INTEGER NOT NULL DEFAULT 0;")
+                cur.execute("ALTER TABLE etl_metrics ADD COLUMN IF NOT EXISTS raw_hw_count INTEGER NOT NULL DEFAULT 0;")
+
+                # Reset de la base si demandé
+                if args.reset:
+                    print("Reset de la table offers_unified (suppression des anciennes données)...")
+                    cur.execute("TRUNCATE TABLE offers_unified;")
 
                 # Insertion en batch pour la performance
                 execute_batch(cur, upsert_sql(), rows, page_size=200)
@@ -287,8 +329,10 @@ def main() -> int:
                 cur.execute(
                     insert_metrics_sql(),
                     {
-                        "raw_api_count": raw_api_count,
-                        "raw_scrap_count": raw_scrap_count,
+                        "raw_api_count": metrics["ft"],
+                        "raw_wttj_count": metrics["wttj"],
+                        "raw_hw_count": metrics["hw"],
+                        "raw_scrap_count": metrics["total_scrap"],
                         "postgres_count": postgres_count,
                     },
                 )
@@ -298,7 +342,7 @@ def main() -> int:
         print(
             "Chargement Postgres termine: "
             f"{len(rows)} lignes upsert | "
-            f"raw_api_count={raw_api_count} raw_scrap_count={raw_scrap_count} "
+            f"ft={metrics['ft']} wttj={metrics['wttj']} hw={metrics['hw']} "
             f"postgres_count={postgres_count}"
         )
         return 0

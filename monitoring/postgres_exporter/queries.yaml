@@ -22,6 +22,30 @@ job_market_raw_scrap_count:
         usage: "GAUGE"
         description: "Latest raw-scrap object count recorded by ETL"
 
+job_market_raw_wttj_count:
+  query: |
+    SELECT COALESCE(raw_wttj_count, 0) AS value
+    FROM etl_metrics
+    ORDER BY run_ts DESC
+    LIMIT 1;
+  master: true
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Latest raw-wttj object count recorded by ETL"
+
+job_market_raw_hw_count:
+  query: |
+    SELECT COALESCE(raw_hw_count, 0) AS value
+    FROM etl_metrics
+    ORDER BY run_ts DESC
+    LIMIT 1;
+  master: true
+  metrics:
+    - value:
+        usage: "GAUGE"
+        description: "Latest raw-hellowork object count recorded by ETL"
+
 job_market_postgres_count:
   query: |
     SELECT COALESCE(postgres_count, 0) AS value

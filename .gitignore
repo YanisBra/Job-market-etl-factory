@@ -3,6 +3,7 @@
 __pycache__/
 RSA_Key.pem
 projet.pdf
+projet.md
 GEMINI.md
 *.py[cod]
 .pytest_cache/

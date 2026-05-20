@@ -101,12 +101,17 @@
       },
       "targets": [
         {
-          "expr": "job_market_raw_scrap_count_value",
-          "legendFormat": "raw_scrap",
+          "expr": "job_market_raw_wttj_count_value",
+          "legendFormat": "raw_wttj",
           "refId": "A"
+        },
+        {
+          "expr": "job_market_raw_hw_count_value",
+          "legendFormat": "raw_hw",
+          "refId": "B"
         }
       ],
-      "title": "Raw Scrap Objects WTTJ (MinIO)",
+      "title": "Raw Scrap Objects WTTJ & HW (MinIO)",
       "type": "timeseries"
     },
     {
