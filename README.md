@@ -145,6 +145,7 @@ docker compose down -v
 - MinIO API: [http://localhost:9000](http://localhost:9000)
 - Prometheus: [http://localhost:9090](http://localhost:9090)
 - Grafana: [http://localhost:3000](http://localhost:3000)
+- Dashboard Market: [http://localhost:8501](http://localhost:8501)
 - Postgres: `localhost:5433`
 
 ## 7) Ingestion locale (sans Airflow)
