@@ -239,14 +239,17 @@ services:
       PGDATABASE: ${POSTGRES_DB}
       PGUSER: ${POSTGRES_USER}
       PGPASSWORD: ${POSTGRES_PASSWORD}
-      _PIP_ADDITIONAL_REQUIREMENTS: streamlit plotly psycopg2-binary
     volumes:
       - ./src:/opt/airflow/src
       - ./.env:/opt/airflow/.env
     ports:
       - "${DASHBOARD_PORT:-8501}:8501"
     working_dir: /opt/airflow
-    command: streamlit run src/dashboard.py --server.port 8501 --server.address 0.0.0.0
+    command: >
+      bash -c "
+      pip install --no-cache-dir streamlit plotly psycopg2-binary &&
+      streamlit run src/dashboard.py --server.port 8501 --server.address 0.0.0.0
+      "
 
 volumes:
   postgres_data:
