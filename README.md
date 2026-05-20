@@ -79,7 +79,7 @@ Ensuite, utilise toujours:
 - ou active le venv avec `source .venv/bin/activate`
 - Windows: `.venv\Scripts\python.exe ...`
 
-## 4) Configuration `.env`
+## 4) Configuratioquen `.env`
 
 Le projet lit automatiquement le fichier `.env`.
 
