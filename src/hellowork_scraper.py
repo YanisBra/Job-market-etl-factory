@@ -246,16 +246,16 @@ class HelloWorkScraper:
         date_creation = job.get("datePosted")
         employment_type = job.get("employmentType")
         exp = job.get("experienceRequirements")
-        experience_required = exp.get("monthsOfExperience") if isinstance(exp, dict) else None
+        experience_required = (
+            exp.get("monthsOfExperience") if isinstance(exp, dict) else None
+        )
 
-        
-        
         # Mapping contract type
         type_contrat = self._map_contract_type(employment_type)
-        
+
         # Salaire
         salaire = self._extract_salary(job.get("baseSalary"))
-        
+
         lieu_libelle = self._build_lieu_libelle(city=city, country=country)
         offer_id = self._build_offer_id(url=url, title=title)
 
@@ -274,12 +274,13 @@ class HelloWorkScraper:
             },
             "typeContrat": type_contrat,
             "typeContratLibelle": type_contrat,
-            "alternance": "ALTERNANCE" in str(employment_type).upper() or "CONTRACTOR" in str(employment_type).upper(),
+            "alternance": "ALTERNANCE" in str(employment_type).upper()
+            or "CONTRACTOR" in str(employment_type).upper(),
             "salaire": salaire,
             "experienceRequise": experience_required,
             "niveauEtude": None,
             "origineOffre": {
-                "origine": "3", # Convention arbitraire pour HelloWork
+                "origine": "3",  # Convention arbitraire pour HelloWork
                 "urlOrigine": url,
             },
             "source": "hellowork",
@@ -344,6 +345,7 @@ class HelloWorkScraper:
         urls: set[str] = set()
         # Pattern typique: /fr-fr/emplois/77964195.html
         import re
+
         pattern = r'href="(/fr-fr/emplois/[0-9]+\.html)"'
         matches = re.findall(pattern, html)
         for m in matches:
@@ -366,9 +368,12 @@ class HelloWorkScraper:
                     items = payload
                 elif isinstance(payload, dict):
                     items = payload.get("@graph", [payload])
-                
+
                 for item in items:
-                    if isinstance(item, dict) and str(item.get("@type")).lower() == "jobposting":
+                    if (
+                        isinstance(item, dict)
+                        and str(item.get("@type")).lower() == "jobposting"
+                    ):
                         offers.append(self._normalize_jobposting(item))
             except Exception:
                 continue
@@ -387,7 +392,7 @@ class HelloWorkCollector:
         output_path: Path,
     ) -> Path:
         job_urls: set[str] = set()
-        
+
         # 1. Extraction des URLs depuis les pages de recherche
         for p in range(1, max_pages + 1):
             print(f"Extraction URLs HelloWork - Page {p}...")
@@ -407,7 +412,7 @@ class HelloWorkCollector:
                 html = self.scraper.fetch_job_page(url)
                 offers = self.scraper.extract_offers(html)
                 all_offers.extend(offers)
-                time.sleep(0.5) # Politesse
+                time.sleep(0.5)  # Politesse
             except Exception as e:
                 print(f"Erreur sur {url}: {e}")
 
@@ -440,8 +445,10 @@ def main() -> int:
         config = HelloWorkScraperConfig.from_env()
         scraper = HelloWorkScraper(config)
         collector = HelloWorkCollector(scraper)
-        
-        path = collector.collect(args.query, args.location, args.max_pages, Path(args.output))
+
+        path = collector.collect(
+            args.query, args.location, args.max_pages, Path(args.output)
+        )
         print(f"Collecte HelloWork finie: {path}")
 
         if not args.skip_minio:
@@ -452,6 +459,7 @@ def main() -> int:
     except Exception as e:
         print(f"Erreur: {e}")
         return 1
+
 
 if __name__ == "__main__":
     main()

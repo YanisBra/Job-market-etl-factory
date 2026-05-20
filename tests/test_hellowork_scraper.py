@@ -71,7 +71,7 @@ def test_hellowork_collect_full_flow(tmp_path):
       </body>
     </html>
     """
-    
+
     detail_html = """
     <html>
       <head>

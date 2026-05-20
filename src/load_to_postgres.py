@@ -196,10 +196,14 @@ def minio_client() -> Minio:
     )
 
 
-def count_bucket_objects(client: Minio, bucket_name: str, prefix: str | None = None) -> int:
+def count_bucket_objects(
+    client: Minio, bucket_name: str, prefix: str | None = None
+) -> int:
     """Compte récursivement le nombre d'objets dans un bucket MinIO, optionnellement filtré par préfixe."""
     try:
-        return sum(1 for _ in client.list_objects(bucket_name, prefix=prefix, recursive=True))
+        return sum(
+            1 for _ in client.list_objects(bucket_name, prefix=prefix, recursive=True)
+        )
     except Exception:
         return 0
 
@@ -210,15 +214,19 @@ def count_raw_minio_objects() -> dict[str, int]:
     bucket_scrap = os.environ.get("MINIO_BUCKET_RAW_SCRAP", "raw-scrap")
     try:
         client = minio_client()
-        raw_ft_count = count_bucket_objects(client, bucket_api, prefix="france_travail/")
-        raw_wttj_count = count_bucket_objects(client, bucket_scrap, prefix="welcome_to_the_jungle/")
+        raw_ft_count = count_bucket_objects(
+            client, bucket_api, prefix="france_travail/"
+        )
+        raw_wttj_count = count_bucket_objects(
+            client, bucket_scrap, prefix="welcome_to_the_jungle/"
+        )
         raw_hw_count = count_bucket_objects(client, bucket_scrap, prefix="hellowork/")
-        
+
         return {
             "ft": raw_ft_count,
             "wttj": raw_wttj_count,
             "hw": raw_hw_count,
-            "total_scrap": raw_wttj_count + raw_hw_count
+            "total_scrap": raw_wttj_count + raw_hw_count,
         }
     except Exception:
         return {"ft": 0, "wttj": 0, "hw": 0, "total_scrap": 0}
@@ -308,17 +316,29 @@ def main() -> int:
                 # Préparation du schéma
                 cur.execute(create_table_sql())
                 cur.execute(create_metrics_table_sql())
-                
+
                 # Migration de la table si nécessaire
-                cur.execute("ALTER TABLE offers_unified ADD COLUMN IF NOT EXISTS title_clean TEXT;")
-                cur.execute("ALTER TABLE offers_unified ADD COLUMN IF NOT EXISTS salary_annual DOUBLE PRECISION;")
-                cur.execute("ALTER TABLE offers_unified ADD COLUMN IF NOT EXISTS experience_level TEXT;")
-                cur.execute("ALTER TABLE etl_metrics ADD COLUMN IF NOT EXISTS raw_wttj_count INTEGER NOT NULL DEFAULT 0;")
-                cur.execute("ALTER TABLE etl_metrics ADD COLUMN IF NOT EXISTS raw_hw_count INTEGER NOT NULL DEFAULT 0;")
+                cur.execute(
+                    "ALTER TABLE offers_unified ADD COLUMN IF NOT EXISTS title_clean TEXT;"
+                )
+                cur.execute(
+                    "ALTER TABLE offers_unified ADD COLUMN IF NOT EXISTS salary_annual DOUBLE PRECISION;"
+                )
+                cur.execute(
+                    "ALTER TABLE offers_unified ADD COLUMN IF NOT EXISTS experience_level TEXT;"
+                )
+                cur.execute(
+                    "ALTER TABLE etl_metrics ADD COLUMN IF NOT EXISTS raw_wttj_count INTEGER NOT NULL DEFAULT 0;"
+                )
+                cur.execute(
+                    "ALTER TABLE etl_metrics ADD COLUMN IF NOT EXISTS raw_hw_count INTEGER NOT NULL DEFAULT 0;"
+                )
 
                 # Reset de la base si demandé
                 if args.reset:
-                    print("Reset de la table offers_unified (suppression des anciennes données)...")
+                    print(
+                        "Reset de la table offers_unified (suppression des anciennes données)..."
+                    )
                     cur.execute("TRUNCATE TABLE offers_unified;")
 
                 # Insertion en batch pour la performance

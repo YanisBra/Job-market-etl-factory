@@ -82,6 +82,7 @@ class OfferTransformer:
         if not title:
             return None
         import re
+
         t = title.lower()
         # Supprime (h/f), h/f, (f/h), f/h, (m/f), m/f
         t = re.sub(r"\s*[\(\[]?\s*[hfm]\s*/\s*[hfm]\s*[\)\]]?\s*", " ", t)
@@ -90,7 +91,13 @@ class OfferTransformer:
         t = " ".join(t.split())
         return t or None
 
-    def _annualize_salary(self, label: str | None, min_val: float | None, max_val: float | None, unit: str | None = "YEAR") -> float | None:
+    def _annualize_salary(
+        self,
+        label: str | None,
+        min_val: float | None,
+        max_val: float | None,
+        unit: str | None = "YEAR",
+    ) -> float | None:
         """Estime un salaire annuel à partir des données brutes (heure, mois, an)."""
         # Priorité aux valeurs numériques si présentes
         val = None
@@ -100,16 +107,16 @@ class OfferTransformer:
             val = min_val
         elif max_val is not None:
             val = max_val
-            
+
         if val is not None:
             u = (unit or "YEAR").upper()
             if "HOUR" in u or "HEURE" in u:
-                return val * 35 * 52 # Base 35h
+                return val * 35 * 52  # Base 35h
             if "MONTH" in u or "MOIS" in u:
                 return val * 12
-            if val < 100: # Probablement horaire non détecté
+            if val < 100:  # Probablement horaire non détecté
                 return val * 35 * 52
-            if val < 5000: # Probablement mensuel non détecté
+            if val < 5000:  # Probablement mensuel non détecté
                 return val * 12
             return val
 
@@ -117,10 +124,11 @@ class OfferTransformer:
         if not label:
             return None
         import re
+
         nums = re.findall(r"(\d+(?:\.\d+)?)", label.replace(",", ".").replace(" ", ""))
         if not nums:
             return None
-        
+
         val = float(nums[0])
         # Heuristique simple sur la valeur
         if val < 100:
@@ -135,7 +143,7 @@ class OfferTransformer:
         """Catégorise le niveau d'expérience (Junior, Intermédiaire, Sénior)."""
         if not exp_text:
             return "Non spécifié"
-        
+
         # Tentative d'interprétation comme un nombre de mois (format HelloWork)
         try:
             months = int(float(str(exp_text)))
@@ -149,15 +157,29 @@ class OfferTransformer:
             pass
 
         t = exp_text.lower()
-        
+
         # Détection par mots-clés
-        if any(w in t for w in ["senior", "sénior", "expert", "confirmé", "10 ans", "8 ans", "7 ans", "6 ans", "5 ans"]):
+        if any(
+            w in t
+            for w in [
+                "senior",
+                "sénior",
+                "expert",
+                "confirmé",
+                "10 ans",
+                "8 ans",
+                "7 ans",
+                "6 ans",
+                "5 ans",
+            ]
+        ):
             return "Sénior (5+ ans)"
         if any(w in t for w in ["junior", "débutant", "jeune diplômé"]):
             return "Junior (0-2 ans)"
-        
+
         # Détection par chiffres dans le texte (ex: "3 ans d'expérience")
         import re
+
         years_match = re.findall(r"(\d+)\s*an", t)
         if years_match:
             y = int(years_match[0])
@@ -166,7 +188,7 @@ class OfferTransformer:
             if y >= 5:
                 return "Sénior (5+ ans)"
             return "Intermédiaire (2-5 ans)"
-            
+
         return "Intermédiaire (2-5 ans)"
 
     def _alternance_flag(self, offer: dict[str, Any]) -> bool:
@@ -223,7 +245,9 @@ class OfferTransformer:
             origin_info = offer.get("origineOffre") or {}
 
             # Priorité au libellé lisible pour la ville (France Travail met souvent le code INSEE dans 'commune')
-            raw_city = self._clean_text(location_info.get("libelle")) or self._clean_text(location_info.get("commune"))
+            raw_city = self._clean_text(
+                location_info.get("libelle")
+            ) or self._clean_text(location_info.get("commune"))
             city = raw_city
             if raw_city and " - " in raw_city:
                 # Nettoyage du format "75 - PARIS" -> "PARIS"
@@ -292,8 +316,16 @@ class OfferTransformer:
             title = self._clean_text(offer.get("intitule"))
             exp_text = self._clean_text(offer.get("experienceRequise"))
             sal_label = self._clean_text(salary_raw.get("libelle"))
-            sal_min = salary_raw.get("min") if isinstance(salary_raw.get("min"), (int, float)) else None
-            sal_max = salary_raw.get("max") if isinstance(salary_raw.get("max"), (int, float)) else None
+            sal_min = (
+                salary_raw.get("min")
+                if isinstance(salary_raw.get("min"), (int, float))
+                else None
+            )
+            sal_max = (
+                salary_raw.get("max")
+                if isinstance(salary_raw.get("max"), (int, float))
+                else None
+            )
 
             # Construction de la ligne unifiée (alignée sur FT pour la consistance)
             rows.append(
@@ -311,7 +343,9 @@ class OfferTransformer:
                     "alternance": alternance,
                     "description": self._clean_text(offer.get("description")),
                     "salary_label": sal_label,
-                    "salary_annual": self._annualize_salary(sal_label, sal_min, sal_max, salary_raw.get("unite")),
+                    "salary_annual": self._annualize_salary(
+                        sal_label, sal_min, sal_max, salary_raw.get("unite")
+                    ),
                     "salary_min": sal_min,
                     "salary_max": sal_max,
                     "salary_currency": self._clean_text(salary_raw.get("devise")),
@@ -344,8 +378,16 @@ class OfferTransformer:
             title = self._clean_text(offer.get("intitule"))
             exp_text = self._clean_text(offer.get("experienceRequise"))
             sal_label = self._clean_text(salary_raw.get("libelle"))
-            sal_min = salary_raw.get("min") if isinstance(salary_raw.get("min"), (int, float)) else None
-            sal_max = salary_raw.get("max") if isinstance(salary_raw.get("max"), (int, float)) else None
+            sal_min = (
+                salary_raw.get("min")
+                if isinstance(salary_raw.get("min"), (int, float))
+                else None
+            )
+            sal_max = (
+                salary_raw.get("max")
+                if isinstance(salary_raw.get("max"), (int, float))
+                else None
+            )
 
             rows.append(
                 {
@@ -362,7 +404,9 @@ class OfferTransformer:
                     "alternance": alternance,
                     "description": self._clean_text(offer.get("description")),
                     "salary_label": sal_label,
-                    "salary_annual": self._annualize_salary(sal_label, sal_min, sal_max, salary_raw.get("unite")),
+                    "salary_annual": self._annualize_salary(
+                        sal_label, sal_min, sal_max, salary_raw.get("unite")
+                    ),
                     "salary_min": sal_min,
                     "salary_max": sal_max,
                     "salary_currency": self._clean_text(salary_raw.get("devise")),

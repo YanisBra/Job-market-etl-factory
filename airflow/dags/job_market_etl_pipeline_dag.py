@@ -134,7 +134,11 @@ with DAG(
 
     (
         start
-        >> [wait_france_travail_ingestion, wait_wttj_ingestion, wait_hellowork_ingestion]
+        >> [
+            wait_france_travail_ingestion,
+            wait_wttj_ingestion,
+            wait_hellowork_ingestion,
+        ]
         >> normalize_raw
         >> load_to_postgres
         >> end
