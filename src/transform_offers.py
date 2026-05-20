@@ -13,7 +13,6 @@ class TransformConfig:
     """Configuration pour le script de transformation."""
 
     france_travail_input: Path  # Chemin vers les données brutes France Travail
-    wttj_input: Path  # Chemin vers les données brutes Welcome to the Jungle
     hellowork_input: Path  # Chemin vers les données brutes HelloWork
     output: Path  # Chemin du fichier de sortie unifié
 
@@ -21,7 +20,7 @@ class TransformConfig:
 class OfferTransformer:
     """
     Responsable de la transformation, du nettoyage et de l'unification des offres
-    provenant de différentes sources (France Travail, Welcome to the Jungle et HelloWork).
+    provenant de différentes sources (France Travail et HelloWork).
     """
 
     def __init__(self, config: TransformConfig) -> None:
@@ -37,13 +36,11 @@ class OfferTransformer:
         """Exécute le pipeline complet : lecture, normalisation, dédoublonnage et export."""
         # 1. Chargement des données brutes (JSON)
         ft_payload = self._read_json(self.config.france_travail_input)
-        wttj_payload = self._read_json(self.config.wttj_input)
         hw_payload = self._read_json(self.config.hellowork_input)
 
         # 2. Normalisation vers un schéma commun
         rows: list[dict[str, Any]] = []
         rows.extend(self._normalize_france_travail(ft_payload.get("offers", [])))
-        rows.extend(self._normalize_wttj(wttj_payload.get("offers", [])))
         rows.extend(self._normalize_hellowork(hw_payload.get("offers", [])))
 
         # 3. Suppression des doublons basés sur une clé métier
@@ -289,75 +286,6 @@ class OfferTransformer:
             )
         return rows
 
-    def _normalize_wttj(self, offers: Any) -> list[dict[str, Any]]:
-        """Transforme le format spécifique Welcome to the Jungle vers le schéma unifié."""
-        if not isinstance(offers, list):
-            return []
-
-        rows: list[dict[str, Any]] = []
-        for offer in offers:
-            if not isinstance(offer, dict):
-                continue
-
-            # Extraction sécurisée des données de salaire
-            salary_raw = (
-                offer.get("salaire") if isinstance(offer.get("salaire"), dict) else {}
-            )
-
-            # Normalisation des types de contrats
-            contract_type = self._clean_text(offer.get("typeContrat"))
-            alternance = self._alternance_flag(offer)
-
-            # Extraction des informations d'entreprise et de localisation
-            company_info = offer.get("entreprise") or {}
-            location_info = offer.get("lieuTravail") or {}
-            origin_info = offer.get("origineOffre") or {}
-
-            title = self._clean_text(offer.get("intitule"))
-            exp_text = self._clean_text(offer.get("experienceRequise"))
-            sal_label = self._clean_text(salary_raw.get("libelle"))
-            sal_min = (
-                salary_raw.get("min")
-                if isinstance(salary_raw.get("min"), (int, float))
-                else None
-            )
-            sal_max = (
-                salary_raw.get("max")
-                if isinstance(salary_raw.get("max"), (int, float))
-                else None
-            )
-
-            # Construction de la ligne unifiée (alignée sur FT pour la consistance)
-            rows.append(
-                {
-                    "source": "welcome_to_the_jungle",
-                    "source_offer_id": self._clean_text(offer.get("id")),
-                    "external_url": self._clean_text(origin_info.get("urlOrigine")),
-                    "title": title,
-                    "title_clean": self._clean_job_title(title),
-                    "company_name": self._clean_text(company_info.get("nom")),
-                    "city": self._clean_text(location_info.get("commune")),
-                    "postal_code": self._clean_text(location_info.get("codePostal")),
-                    "contract_type_raw": contract_type,
-                    "contract_type": contract_type,
-                    "alternance": alternance,
-                    "description": self._clean_text(offer.get("description")),
-                    "salary_label": sal_label,
-                    "salary_annual": self._annualize_salary(
-                        sal_label, sal_min, sal_max, salary_raw.get("unite")
-                    ),
-                    "salary_min": sal_min,
-                    "salary_max": sal_max,
-                    "salary_currency": self._clean_text(salary_raw.get("devise")),
-                    "experience_required": exp_text,
-                    "experience_level": self._categorize_experience(exp_text, "WTTJ"),
-                    "education_level": self._clean_text(offer.get("niveauEtude")),
-                    "created_at": self._clean_text(offer.get("dateCreation")),
-                    "raw_offer": offer,
-                }
-            )
-        return rows
-
     def _normalize_hellowork(self, offers: Any) -> list[dict[str, Any]]:
         """Transforme le format spécifique HelloWork vers le schéma unifié."""
         if not isinstance(offers, list):
@@ -442,24 +370,19 @@ def build_arg_parser() -> argparse.ArgumentParser:
     """
     Configure le parseur d'arguments pour le script de transformation.
 
-    Définit les chemins par défaut pour les entrées France Travail et WTTJ,
+    Définit les chemins par défaut pour les entrées France Travail et HelloWork,
     ainsi que pour le fichier de sortie unifié.
 
     Returns:
         argparse.ArgumentParser: Le parseur configuré.
     """
     parser = argparse.ArgumentParser(
-        description="Transformation ETL: nettoyage + fusion FT/WTTJ/HW."
+        description="Transformation ETL: nettoyage + fusion FT/HW."
     )
     parser.add_argument(
         "--france-travail-input",
         default="data/raw/france_travail_offers.json",
         help="Chemin vers le JSON brut de France Travail",
-    )
-    parser.add_argument(
-        "--wttj-input",
-        default="data/raw/wttj_offers.json",
-        help="Chemin vers le JSON brut de Welcome to the Jungle",
     )
     parser.add_argument(
         "--hellowork-input",
@@ -488,7 +411,6 @@ def main() -> int:
         # Initialisation de la configuration avec les arguments CLI
         cfg = TransformConfig(
             france_travail_input=Path(args.france_travail_input),
-            wttj_input=Path(args.wttj_input),
             hellowork_input=Path(args.hellowork_input),
             output=Path(args.output),
         )

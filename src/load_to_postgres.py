@@ -88,7 +88,6 @@ def create_metrics_table_sql() -> str:
         id BIGSERIAL PRIMARY KEY,
         run_ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         raw_api_count INTEGER NOT NULL,
-        raw_wttj_count INTEGER NOT NULL DEFAULT 0,
         raw_hw_count INTEGER NOT NULL DEFAULT 0,
         raw_scrap_count INTEGER NOT NULL,
         postgres_count INTEGER NOT NULL
@@ -177,8 +176,8 @@ def upsert_sql() -> str:
 def insert_metrics_sql() -> str:
     """Requête SQL pour insérer un nouveau point de métriques."""
     return """
-    INSERT INTO etl_metrics (raw_api_count, raw_wttj_count, raw_hw_count, raw_scrap_count, postgres_count)
-    VALUES (%(raw_api_count)s, %(raw_wttj_count)s, %(raw_hw_count)s, %(raw_scrap_count)s, %(postgres_count)s);
+    INSERT INTO etl_metrics (raw_api_count, raw_hw_count, raw_scrap_count, postgres_count)
+    VALUES (%(raw_api_count)s, %(raw_hw_count)s, %(raw_scrap_count)s, %(postgres_count)s);
     """
 
 
@@ -217,19 +216,15 @@ def count_raw_minio_objects() -> dict[str, int]:
         raw_ft_count = count_bucket_objects(
             client, bucket_api, prefix="france_travail/"
         )
-        raw_wttj_count = count_bucket_objects(
-            client, bucket_scrap, prefix="welcome_to_the_jungle/"
-        )
         raw_hw_count = count_bucket_objects(client, bucket_scrap, prefix="hellowork/")
 
         return {
             "ft": raw_ft_count,
-            "wttj": raw_wttj_count,
             "hw": raw_hw_count,
-            "total_scrap": raw_wttj_count + raw_hw_count,
+            "total_scrap": raw_hw_count,
         }
     except Exception:
-        return {"ft": 0, "wttj": 0, "hw": 0, "total_scrap": 0}
+        return {"ft": 0, "hw": 0, "total_scrap": 0}
 
 
 def count_postgres_rows(cur: Any) -> int:
@@ -328,9 +323,6 @@ def main() -> int:
                     "ALTER TABLE offers_unified ADD COLUMN IF NOT EXISTS experience_level TEXT;"
                 )
                 cur.execute(
-                    "ALTER TABLE etl_metrics ADD COLUMN IF NOT EXISTS raw_wttj_count INTEGER NOT NULL DEFAULT 0;"
-                )
-                cur.execute(
                     "ALTER TABLE etl_metrics ADD COLUMN IF NOT EXISTS raw_hw_count INTEGER NOT NULL DEFAULT 0;"
                 )
 
@@ -350,7 +342,6 @@ def main() -> int:
                     insert_metrics_sql(),
                     {
                         "raw_api_count": metrics["ft"],
-                        "raw_wttj_count": metrics["wttj"],
                         "raw_hw_count": metrics["hw"],
                         "raw_scrap_count": metrics["total_scrap"],
                         "postgres_count": postgres_count,
@@ -362,7 +353,7 @@ def main() -> int:
         print(
             "Chargement Postgres termine: "
             f"{len(rows)} lignes upsert | "
-            f"ft={metrics['ft']} wttj={metrics['wttj']} hw={metrics['hw']} "
+            f"ft={metrics['ft']} hw={metrics['hw']} "
             f"postgres_count={postgres_count}"
         )
         return 0

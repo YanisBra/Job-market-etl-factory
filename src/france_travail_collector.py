@@ -365,12 +365,14 @@ def main() -> int:
     args = build_arg_parser().parse_args()
     try:
         load_dotenv_file()
+        # Priorité : Argument CLI > Variable d Env > Vide
+        keywords = args.keywords or os.environ.get("JOB_SEARCH_QUERY", "")
         config = FranceTravailConfig.from_env()
         client = FranceTravailApiClient(config)
         collector = OfferCollector(client)
 
         output_path = collector.collect(
-            keywords=args.keywords,
+            keywords=keywords,
             location=args.location,
             pages=args.pages,
             page_size=args.page_size,

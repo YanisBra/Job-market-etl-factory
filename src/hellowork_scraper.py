@@ -442,12 +442,13 @@ def main() -> int:
 
     try:
         load_dotenv_file()
+        query = args.query or os.environ.get("JOB_SEARCH_QUERY", "")
         config = HelloWorkScraperConfig.from_env()
         scraper = HelloWorkScraper(config)
         collector = HelloWorkCollector(scraper)
 
         path = collector.collect(
-            args.query, args.location, args.max_pages, Path(args.output)
+            query, args.location, args.max_pages, Path(args.output)
         )
         print(f"Collecte HelloWork finie: {path}")
 
