@@ -123,9 +123,12 @@ class OfferTransformer:
         
         val = float(nums[0])
         # Heuristique simple sur la valeur
-        if val < 100: return val * 35 * 52
-        if val > 1000 and val < 6000: return val * 12
-        if val > 15000: return val
+        if val < 100:
+            return val * 35 * 52
+        if val > 1000 and val < 6000:
+            return val * 12
+        if val > 15000:
+            return val
         return None
 
     def _categorize_experience(self, exp_text: str | None, source: str) -> str:
@@ -137,8 +140,10 @@ class OfferTransformer:
         try:
             months = int(float(str(exp_text)))
             years = months / 12
-            if years < 2: return "Junior (0-2 ans)"
-            if years >= 5: return "Sénior (5+ ans)"
+            if years < 2:
+                return "Junior (0-2 ans)"
+            if years >= 5:
+                return "Sénior (5+ ans)"
             return "Intermédiaire (2-5 ans)"
         except (ValueError, TypeError):
             pass
@@ -156,8 +161,10 @@ class OfferTransformer:
         years_match = re.findall(r"(\d+)\s*an", t)
         if years_match:
             y = int(years_match[0])
-            if y < 2: return "Junior (0-2 ans)"
-            if y >= 5: return "Sénior (5+ ans)"
+            if y < 2:
+                return "Junior (0-2 ans)"
+            if y >= 5:
+                return "Sénior (5+ ans)"
             return "Intermédiaire (2-5 ans)"
             
         return "Intermédiaire (2-5 ans)"

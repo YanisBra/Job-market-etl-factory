@@ -10,9 +10,11 @@ st.set_page_config(page_title="Job Market Analytics", layout="wide")
 
 def load_dotenv_file(path: str = ".env"):
     env_path = Path(path)
-    if not env_path.exists(): return
+    if not env_path.exists():
+        return
     for line in env_path.read_text(encoding="utf-8").splitlines():
-        if not line or line.startswith("#") or "=" not in line: continue
+        if not line or line.startswith("#") or "=" not in line:
+            continue
         key, value = line.split("=", 1)
         os.environ.setdefault(key.strip(), value.strip().replace('"', '').replace("'", ""))
 

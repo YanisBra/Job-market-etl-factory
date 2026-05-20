@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
-from urllib import error, parse, request
+from urllib import parse, request
 
 
 def load_dotenv_file(path: str = ".env") -> None:
@@ -301,10 +301,14 @@ class HelloWorkScraper:
         if not employment_type:
             return None
         val = str(employment_type).upper()
-        if "FULL_TIME" in val: return "CDI"
-        if "TEMPORARY" in val: return "CDD"
-        if "INTERN" in val: return "Stage"
-        if "CONTRACTOR" in val: return "Alternance"
+        if "FULL_TIME" in val:
+            return "CDI"
+        if "TEMPORARY" in val:
+            return "CDD"
+        if "INTERN" in val:
+            return "Stage"
+        if "CONTRACTOR" in val:
+            return "Alternance"
         return val
 
     def _extract_salary(self, base_salary: Any) -> dict[str, Any] | None:
@@ -328,7 +332,8 @@ class HelloWorkScraper:
         }
 
     def _strip_html(self, value: str) -> str:
-        if not value: return ""
+        if not value:
+            return ""
         parser = HtmlTextExtractor()
         parser.feed(value)
         parser.close()
