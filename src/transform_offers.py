@@ -8,13 +8,13 @@ from pathlib import Path
 from typing import Any
 
 
-@dataclass
+@dataclass #Permet d'éviter le init manuel et d'avoir une classe de configuration simple
 class TransformConfig:
     """Configuration pour le script de transformation."""
 
-    france_travail_input: Path  # Chemin vers les données brutes France Travail
-    hellowork_input: Path  # Chemin vers les données brutes HelloWork
-    output: Path  # Chemin du fichier de sortie unifié
+    france_travail_input: Path  
+    hellowork_input: Path  
+    output: Path  
 
 
 class OfferTransformer:
@@ -34,12 +34,13 @@ class OfferTransformer:
 
     def run(self) -> Path:
         """Exécute le pipeline complet : lecture, normalisation, dédoublonnage et export."""
+
         # 1. Chargement des données brutes (JSON)
         ft_payload = self._read_json(self.config.france_travail_input)
         hw_payload = self._read_json(self.config.hellowork_input)
 
         # 2. Normalisation vers un schéma commun
-        rows: list[dict[str, Any]] = []
+        rows: list[dict[str, Any]] = [] # rows est une liste de dictionnaires, dont les clés sont des strings et les valeurs peuvent être n'importe quoi
         rows.extend(self._normalize_france_travail(ft_payload.get("offers", [])))
         rows.extend(self._normalize_hellowork(hw_payload.get("offers", [])))
 
@@ -80,10 +81,8 @@ class OfferTransformer:
             return None
         import re
 
-        t = title.lower()
-        # Supprime (h/f), h/f, (f/h), f/h, (m/f), m/f
-        t = re.sub(r"\s*[\(\[]?\s*[hfm]\s*/\s*[hfm]\s*[\)\]]?\s*", " ", t)
-        # Supprime les tirets de fin et espaces multiples
+        t = title.lower() # Supprime (h/f), h/f, (f/h), f/h, (m/f), m/f
+        t = re.sub(r"\s*[\(\[]?\s*[hfm]\s*/\s*[hfm]\s*[\)\]]?\s*", " ", t) # Supprime les tirets de fin et espaces multiples
         t = re.sub(r"\s*-\s*$", "", t)
         t = " ".join(t.split())
         return t or None
@@ -126,8 +125,7 @@ class OfferTransformer:
         if not nums:
             return None
 
-        val = float(nums[0])
-        # Heuristique simple sur la valeur
+        val = float(nums[0]) # Heuristique simple sur la valeur
         if val < 100:
             return val * 35 * 52
         if val > 1000 and val < 6000:
@@ -415,7 +413,7 @@ def main() -> int:
             output=Path(args.output),
         )
 
-        # Lancement de la transformation
+        # Création de l'objet et lancement de la transformation
         output_path = OfferTransformer(cfg).run()
         print(f"Transformation terminee: {output_path}")
         return 0

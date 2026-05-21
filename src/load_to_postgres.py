@@ -82,7 +82,7 @@ def create_table_sql() -> str:
 
 
 def create_metrics_table_sql() -> str:
-    """Retourne le SQL pour créer la table de suivi des métriques ETL."""
+    """Retourne le SQL pour créer la table de suivi des métriques ETL sur GRAFANA."""
     return """
     CREATE TABLE IF NOT EXISTS etl_metrics (
         id BIGSERIAL PRIMARY KEY,
