@@ -6,7 +6,6 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 
-
 default_args = {
     "owner": "yanis",
     "depends_on_past": False,

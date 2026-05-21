@@ -1,4 +1,5 @@
 services:
+  # Base de données pour Airflow et le stockage des offres
   postgres:
     image: pgvector/pgvector:pg13
     container_name: postgres
@@ -12,12 +13,15 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # Stockage objet pour les fichiers bruts (S3-like)
   minio:
     image: minio/minio:latest
     container_name: minio
@@ -33,7 +37,11 @@ services:
       - "${MINIO_CONSOLE_PORT}:9001"
     volumes:
       - minio_data:/data
+    networks:
+      - backend
+      - frontend
 
+  # Initialisation d'Airflow (migration DB et création admin)
   airflow-init:
     image: ${AIRFLOW_IMAGE_NAME}
     container_name: airflow-init
@@ -69,6 +77,8 @@ services:
       - airflow_logs:/opt/airflow/logs
       - ./airflow/dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
+    networks:
+      - backend
     command: >
       bash -c "
       airflow db migrate &&
@@ -81,6 +91,7 @@ services:
       --email ${AIRFLOW_ADMIN_EMAIL} || true
       "
 
+  # Interface Web d'Airflow pour piloter les DAGs
   airflow-webserver:
     image: ${AIRFLOW_IMAGE_NAME}
     container_name: airflow-webserver
@@ -118,8 +129,12 @@ services:
       - ./src:/opt/airflow/src
     ports:
       - "${AIRFLOW_WEBSERVER_PORT}:8080"
+    networks:
+      - frontend
+      - backend
     command: webserver
 
+  # Planificateur d'Airflow (exécute les tâches)
   airflow-scheduler:
     image: ${AIRFLOW_IMAGE_NAME}
     container_name: airflow-scheduler
@@ -155,8 +170,11 @@ services:
       - airflow_logs:/opt/airflow/logs
       - ./airflow/dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
+    networks:
+      - backend
     command: scheduler
 
+  # Expose les métriques Postgres pour Prometheus
   postgres-exporter:
     image: quay.io/prometheuscommunity/postgres-exporter:v0.15.0
     container_name: postgres-exporter
@@ -169,7 +187,10 @@ services:
       PG_EXPORTER_EXTEND_QUERY_PATH: /etc/postgres_exporter/queries.yaml
     volumes:
       - ./monitoring/postgres_exporter/queries.yaml:/etc/postgres_exporter/queries.yaml:ro
+    networks:
+      - backend
 
+  # Collecteur de métriques pour le monitoring
   prometheus:
     image: prom/prometheus:v2.54.1
     container_name: prometheus
@@ -202,7 +223,11 @@ services:
       - "${PROMETHEUS_PORT}:9090"
     volumes:
       - prometheus_data:/prometheus
+    networks:
+      - backend
+      - frontend
 
+  # Dashboard de monitoring technique (Grafana)
   grafana:
     image: grafana/grafana:11.2.0
     container_name: grafana
@@ -222,7 +247,11 @@ services:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - frontend
+      - backend
 
+  # Application Streamlit (Dashboard métier pour le client)
   dashboard:
     image: ${AIRFLOW_IMAGE_NAME}
     container_name: dashboard
@@ -241,12 +270,23 @@ services:
       - ./.env:/opt/airflow/.env
     ports:
       - "${DASHBOARD_PORT:-8501}:8501"
+    networks:
+      - frontend
+      - backend
     working_dir: /opt/airflow
     command: >
       bash -c "
       pip install --no-cache-dir streamlit plotly psycopg2-binary &&
       streamlit run src/dashboard.py --server.port 8501 --server.address 0.0.0.0
       "
+
+networks:
+  # Réseau pour les services exposés (Web, Dashboards)
+  frontend:
+    driver: bridge
+  # Réseau pour l'infrastructure interne (DB, Metrics)
+  backend:
+    driver: bridge
 
 volumes:
   postgres_data:

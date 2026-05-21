@@ -10,7 +10,6 @@ from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.utils.session import provide_session
 from airflow.utils.state import DagRunState
 
-
 default_args = {
     "owner": "yanis",
     "depends_on_past": False,
