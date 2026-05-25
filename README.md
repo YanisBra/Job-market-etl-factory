@@ -2,9 +2,11 @@
 
 Pipeline de données automatisé et conteneurisé pour collecter, transformer et analyser le marché de l'emploi Data en temps réel.
 
+![Architecture du Pipeline](assets/architecture_pipeline.png)
+
 ## 🚀 Présentation
 
-Ce projet déploie une **Modern Data Stack** complète sur une instance **AWS EC2 (8 Go RAM)** pour orchestrer la collecte d'offres d'emploi. Contrairement à une simple recherche web éphémère, cet outil **persiste les données** pour construire un historique précieux et permettre une analyse stratégique des tendances de salaires et de compétences sur le long terme.
+Ce projet déploie une **Modern Data Stack** complète sur une instance **AWS EC2** pour orchestrer la collecte d'offres d'emploi. Contrairement à une simple recherche web éphémère, cet outil **persiste les données** pour construire un historique précieux et permettre une analyse stratégique des tendances de salaires et de compétences sur le long terme.
 
 Les sources principales sont :
 - **API France Travail** (API structurée)
@@ -26,6 +28,7 @@ Les sources principales sont :
 ```text
 .
 ├── airflow/            # Configuration et DAGs Airflow
+├── assets/             # Schémas et documentation visuelle
 ├── monitoring/         # Dashboards Grafana et config Prometheus
 ├── src/                # Code source du pipeline
 │   ├── france_travail_collector.py  # Collecteur API FT
@@ -38,6 +41,8 @@ Les sources principales sont :
 ├── DATA_GOVERNANCE.md  # Dictionnaire de données et règles qualité
 └── README.md           # Documentation principale
 
+```
+
 ## 📋 1) Prérequis
 
 - Docker + Docker Compose
@@ -45,7 +50,30 @@ Les sources principales sont :
 - Accès API France Travail (client_id + client_secret)
 - Git (pour le versionnage)
 
-## 🐍 2) Environnement local Python (venv)
+## 🔐 2) Installation & Configuration 
+
+### 2.1 Clonage du projet
+Ouvrez un terminal et récupérez le code source :
+```bash
+git clone https://gitlab.com/yanis-brahimi/job-market-etl-factory
+cd job-market-etl-factory
+```
+
+### 2.2 Gestion des variables d'environnement
+Le projet utilise un fichier `.env` pour centraliser les secrets et paramètres. Copiez le template :
+
+**macOS / Linux :** `cp .env.example .env`  
+**Windows :** `Copy-Item .env.example .env`
+
+### 2.3 Variables critiques à renseigner
+Éditez le fichier `.env` et complétez les sections suivantes :
+
+*   **API France Travail :** Obtenez vos accès sur le [Portail Partenaire France Travail](https://www.francetravail.io/).
+    *   `FRANCE_TRAVAIL_CLIENT_ID`
+    *   `FRANCE_TRAVAIL_CLIENT_SECRET`
+*   **Airflow / Grafana / MinIO :** Les identifiants par défaut sont `admin` / `admin`.
+
+## 🐍 3) Environnement local Python (venv)
 
 Le `venv` est recommandé pour isoler les dépendances lors des tests locaux.
 
@@ -65,17 +93,6 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-## 🔐 3) Configuration `.env`
-
-Le projet utilise un fichier `.env` pour gérer les secrets. Copiez d'abord le template :
-
-**macOS / Linux :** `cp .env.example .env`  
-**Windows :** `Copy-Item .env.example .env`
-
-**Variables critiques à renseigner :**
-- **France Travail :** `FRANCE_TRAVAIL_CLIENT_ID`, `FRANCE_TRAVAIL_CLIENT_SECRET`
-- **MinIO :** `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` (par défaut: admin/change_me)
-
 ## 🐳 4) Lancer l'infrastructure (Docker)
 
 Pour démarrer toute l'usine à données :
@@ -83,13 +100,17 @@ Pour démarrer toute l'usine à données :
 docker compose up -d
 ```
 
-**URLs des services :**
+**URLs des services en local:**
 - **Dashboard Métier :** [http://localhost:8501](http://localhost:8501)
 - **Airflow :** [http://localhost:8088](http://localhost:8088)
 - **MinIO Console :** [http://localhost:9001](http://localhost:9001)
 - **Grafana :** [http://localhost:3000](http://localhost:3000)
 - **Prometheus :** [http://localhost:9090](http://localhost:9090)
 - **Postgres :** `localhost:5433`
+
+*Note : Si vous déployez sur une instance distante (ex: AWS EC2), remplacez `localhost` par l'adresse IP publique de votre instance.*
+
+ Une fois les conteneurs lancés, patientez jusqu'à la fin de l'exécution des DAGs Airflow pour que la pipeline ETL traite les données et alimente le dashboard. Vous pouvez suivre l'avancement ou déclencher les exécutions manuellement via l'interface Airflow ([http://localhost:8088](http://localhost:8088)).
 
 ---
 
@@ -149,6 +170,5 @@ Le dashboard **"Job Market ETL - Monitoring"** suit :
 - Courbe 3 : Volume final d'offres unifiées en base de données.
 
 ---
-*Projet réalisé dans le cadre de la formation Directeur de Projet IA - Année 1.*
 
 
