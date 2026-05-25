@@ -1,54 +1,55 @@
-# job-market-etl-factory
+# Job Market ETL Factory - Infrastructure Data Cloud
 
-Pipeline data local pour analyser le marche de l'emploi data.
+Pipeline de données automatisé et conteneurisé pour collecter, transformer et analyser le marché de l'emploi Data en temps réel.
 
-Stack:
-- Orchestration: Airflow
-- Data Lake: MinIO
-- Base SQL: Postgres
-- Monitoring: Prometheus + Grafana
-- Ingestion API: France Travail
-- Ingestion Scraping: HelloWork
+## 🚀 Présentation
 
-## 1) Arborescence
+Ce projet déploie une **Modern Data Stack** complète sur une instance **AWS EC2 (8 Go RAM)** pour orchestrer la collecte d'offres d'emploi. Contrairement à une simple recherche web éphémère, cet outil **persiste les données** pour construire un historique précieux et permettre une analyse stratégique des tendances de salaires et de compétences sur le long terme.
+
+Les sources principales sont :
+- **API France Travail** (API structurée)
+- **HelloWork** (Scraping)
+
+## 🛠 Stack Technique
+
+- **Orchestration :** Apache Airflow (Docker)
+- **Stockage Objet (Data Lake) :** MinIO (S3-compatible)
+- **Base de Données (Warehouse) :** PostgreSQL 13 + pgvector
+- **Dashboard Métier :** Streamlit + Plotly
+- **Observabilité :** Prometheus + Grafana
+- **Langage :** Python 3.9+
+
+---
+
+## 📁 Structure du Projet
 
 ```text
 .
-├── airflow/
-│   └── dags/
-│       ├── france_travail_raw_ingestion_dag.py
-│       ├── hellowork_raw_ingestion_dag.py
-│       └── job_market_etl_pipeline_dag.py
-├── data/
-│   └── raw/
-├── docker-compose.yaml
-├── scripts/
-│   └── recover_airflow.sh
-├── requirements.txt
-├── .env.example
-├── src/
-│   ├── france_travail_collector.py
-│   ├── hellowork_scraper.py
-│   ├── transform_offers.py
-│   └── load_to_postgres.py
-└── tests/
-    ├── test_france_travail_collector.py
-    └── test_hellowork_scraper.py
-```
+├── airflow/            # Configuration et DAGs Airflow
+├── monitoring/         # Dashboards Grafana et config Prometheus
+├── src/                # Code source du pipeline
+│   ├── france_travail_collector.py  # Collecteur API FT
+│   ├── hellowork_scraper.py         # Scraper HelloWork (JSON-LD)
+│   ├── transform_offers.py          # Logique ETL & Unification
+│   ├── load_to_postgres.py         # Chargement UPSERT Postgres
+│   └── dashboard.py                 # Interface Streamlit
+├── tests/              # Tests unitaires (Pytest)
+├── docker-compose.yaml # Orchestration des conteneurs
+├── DATA_GOVERNANCE.md  # Dictionnaire de données et règles qualité
+└── README.md           # Documentation principale
 
-## 2) Prerequis
+## 📋 1) Prérequis
 
 - Docker + Docker Compose
-- Python 3.9+ (local)
-- Acces API France Travail (client_id + client_secret)
-- Git (optionnel, pour cloner/versionner)
+- Python 3.9+ (pour l'exécution locale)
+- Accès API France Travail (client_id + client_secret)
+- Git (pour le versionnage)
 
-## 3) Environnement local Python (venv)
+## 🐍 2) Environnement local Python (venv)
 
-Le venv est recommande pour eviter les conflits de dependances.
+Le `venv` est recommandé pour isoler les dépendances lors des tests locaux.
 
-macOS / Linux:
-
+**macOS / Linux :**
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -56,8 +57,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Windows (PowerShell):
-
+**Windows (PowerShell) :**
 ```powershell
 py -m venv .venv
 .venv\Scripts\Activate.ps1
@@ -65,108 +65,90 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-## 4) Configuration `.env`
+## 🔐 3) Configuration `.env`
 
-Le projet lit automatiquement le fichier `.env`.
+Le projet utilise un fichier `.env` pour gérer les secrets. Copiez d'abord le template :
 
-Copie d'abord le template reproductible:
+**macOS / Linux :** `cp .env.example .env`  
+**Windows :** `Copy-Item .env.example .env`
 
-macOS / Linux:
+**Variables critiques à renseigner :**
+- **France Travail :** `FRANCE_TRAVAIL_CLIENT_ID`, `FRANCE_TRAVAIL_CLIENT_SECRET`
+- **MinIO :** `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` (par défaut: admin/change_me)
 
-```bash
-cp .env.example .env
-```
+## 🐳 4) Lancer l'infrastructure (Docker)
 
-Windows (PowerShell):
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Variables critiques:
-- MinIO: `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `MINIO_BUCKET_RAW_API`, `MINIO_BUCKET_RAW_SCRAP`
-- France Travail: `FRANCE_TRAVAIL_CLIENT_ID`, `FRANCE_TRAVAIL_CLIENT_SECRET`
-
-Buckets MinIO utilises (noms actuels):
-- API France Travail: `raw-api`
-- Scraping HelloWork: `raw-scrap`
-
-## 5) Lancer l'infrastructure
-
+Pour démarrer toute l'usine à données :
 ```bash
 docker compose up -d
 ```
 
-## 6) URLs des services
+**URLs des services :**
+- **Dashboard Métier :** [http://localhost:8501](http://localhost:8501)
+- **Airflow :** [http://localhost:8088](http://localhost:8088)
+- **MinIO Console :** [http://localhost:9001](http://localhost:9001)
+- **Grafana :** [http://localhost:3000](http://localhost:3000)
+- **Prometheus :** [http://localhost:9090](http://localhost:9090)
+- **Postgres :** `localhost:5433`
 
-- Dashboard: [http://localhost:8501](http://localhost:8501)
-- Airflow: [http://localhost:8088](http://localhost:8088)
-- MinIO Console: [http://localhost:9001](http://localhost:9001)
-- Prometheus: [http://localhost:9090](http://localhost:9090)
-- Grafana: [http://localhost:3000](http://localhost:3000)
-- Postgres: `localhost:5433`
+---
 
-## 7) Ingestion locale (sans Airflow)
+## 🔄 5) Ingestion & ETL locale (sans Airflow)
 
-### 7.1 France Travail -> `raw-api`
+Vous pouvez tester chaque brique du pipeline manuellement.
 
+### 5.1 Collecte (Extraction)
+**France Travail -> MinIO :**
 ```bash
-.venv/bin/python src/france_travail_collector.py --pages 3 --page-size 50
+python src/france_travail_collector.py --pages 3 --page-size 50
 ```
+*Sortie : `data/raw/france_travail_offers.json` + Upload MinIO (`raw-api`)*
 
-Sorties:
-- Fichier local: `data/raw/france_travail_offers.json`
-- MinIO: `raw-api/france_travail/YYYY/MM/DD/offers_<timestamp>.json`
-
-### 7.2 HelloWork -> `raw-scrap`
-
+**HelloWork -> MinIO :**
 ```bash
-.venv/bin/python src/hellowork_scraper.py --query "data" --max-pages 2
+python src/hellowork_scraper.py --query "data" --max-pages 2
 ```
+*Sortie : `data/raw/hellowork_offers.json` + Upload MinIO (`raw-scrap`)*
 
-Sorties:
-- Fichier local: `data/raw/hellowork_offers.json`
-- MinIO: `raw-scrap/hellowork/YYYY/MM/DD/offers_<timestamp>.json`
-
-## 8) ETL local (processed -> Postgres)
-
-### 8.1 Transformer les donnees brutes
-
+### 5.2 Transformation (Silver Layer)
+Fusion et nettoyage des données :
 ```bash
-.venv/bin/python src/transform_offers.py \
+python src/transform_offers.py \
   --france-travail-input data/raw/france_travail_offers.json \
   --hellowork-input data/raw/hellowork_offers.json \
   --output data/processed/unified_offers.json
 ```
 
-### 8.2 Charger dans Postgres
-
+### 5.3 Chargement (Gold Layer - Postgres)
+Chargement avec stratégie UPSERT :
 ```bash
-.venv/bin/python src/load_to_postgres.py --input data/processed/unified_offers.json
+python src/load_to_postgres.py --input data/processed/unified_offers.json
 ```
 
-## 9) Airflow DAGs
+---
 
-DAGs ingestion actifs:
-- `france_travail_raw_ingestion`
-- `hellowork_raw_ingestion`
+## ⚙️ 6) Orchestration Airflow
 
-DAG ETL:
-- `job_market_etl_pipeline`
+Les DAGs suivants pilotent l'automatisation :
+- `france_travail_raw_ingestion` : Collecte API.
+- `hellowork_raw_ingestion` : Scraping Web.
+- `job_market_etl_pipeline` : Transformation et chargement final.
 
-## 10) Tests
+## 🧪 7) Tests unitaires
 
-Lancer tous les tests:
-
+Pour garantir la robustesse des collecteurs et de la transformation :
 ```bash
-.venv/bin/python -m pytest -q
+python -m pytest -q
 ```
 
-## 11) Prometheus/Grafana
+## 📊 8) Monitoring Grafana
 
-Objectif:
-- courbe 1: volume brut `raw-api` (FT)
-- courbe 2: volume brut `raw-hw`
-- courbe 3: volume en base `offers_unified`
+Le dashboard **"Job Market ETL - Monitoring"** suit :
+- Courbe 1 : Volume brut collecté via API (`raw-api`).
+- Courbe 2 : Volume brut collecté via Scraping (`raw-scrap`).
+- Courbe 3 : Volume final d'offres unifiées en base de données.
 
-Le dashboard est cree automatiquement dans Grafana: `Job Market ETL - Monitoring`.
+---
+*Projet réalisé dans le cadre de la formation Directeur de Projet IA - Année 1.*
+
+

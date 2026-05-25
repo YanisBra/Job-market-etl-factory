@@ -1,10 +1,11 @@
 services:
-  # Base de données pour Airflow et le stockage des offres
+  # Base de données relationnelle
   postgres:
     image: pgvector/pgvector:pg13
     container_name: postgres
     restart: unless-stopped
-    environment:
+    environment: 
+      # Récupération des variables d'env
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
@@ -12,10 +13,13 @@ services:
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
+      # Volume pour persistance 
       - postgres_data:/var/lib/postgresql/data
-    networks:
+    networks: 
+      # Réseau privée 
       - backend
     healthcheck:
+      # Test BDD opérationnelle avant de lancer les services dépendants
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s

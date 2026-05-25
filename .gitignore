@@ -1,14 +1,14 @@
 .env
 .venv/
 __pycache__/
+.pycache/
 RSA_Key.pem
-projet.pdf
-projet.md
-GEMINI.md
 *.py[cod]
 .pytest_cache/
 .ipynb_checkpoints/
 .DS_Store
+
+.ruff_cache/
 
 # Airflow python cache
 airflow/dags/__pycache__/
