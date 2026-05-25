@@ -2,8 +2,6 @@
 
 Pipeline de données automatisé et conteneurisé pour collecter, transformer et analyser le marché de l'emploi Data en temps réel.
 
-![Architecture du Pipeline](assets/architecture_pipeline.png)
-
 ## 🚀 Présentation
 
 Ce projet déploie une **Modern Data Stack** complète sur une instance **AWS EC2** pour orchestrer la collecte d'offres d'emploi. Contrairement à une simple recherche web éphémère, cet outil **persiste les données** pour construire un historique précieux et permettre une analyse stratégique des tendances de salaires et de compétences sur le long terme.
@@ -11,6 +9,8 @@ Ce projet déploie une **Modern Data Stack** complète sur une instance **AWS EC
 Les sources principales sont :
 - **API France Travail** (API structurée)
 - **HelloWork** (Scraping)
+
+![Architecture du Pipeline](assets/architecture_pipeline.png)
 
 ## 🛠 Stack Technique
 
@@ -72,6 +72,7 @@ Le projet utilise un fichier `.env` pour centraliser les secrets et paramètres.
     *   `FRANCE_TRAVAIL_CLIENT_ID`
     *   `FRANCE_TRAVAIL_CLIENT_SECRET`
 *   **Airflow / Grafana / MinIO :** Les identifiants par défaut sont `admin` / `admin`.
+*   **Personnalisation :** Vous pouvez modifier le terme de recherche global (ex: `data`, `python`, `devops`) via la variable `JOB_SEARCH_QUERY` dans le `.env`.
 
 ## 🐍 3) Environnement local Python (venv)
 
@@ -121,15 +122,22 @@ Vous pouvez tester chaque brique du pipeline manuellement.
 ### 5.1 Collecte (Extraction)
 **France Travail -> MinIO :**
 ```bash
-python src/france_travail_collector.py --pages 3 --page-size 50
+python src/france_travail_collector.py 
 ```
-*Sortie : `data/raw/france_travail_offers.json` + Upload MinIO (`raw-api`)*
+*   `--keywords` : Mots-clés de recherche (prioritaire sur `JOB_SEARCH_QUERY`).
+*   `--location` : Code INSEE, département ou région.
+*   `--pages` : Nombre de pages (50 offres/page).
+*   `--contract-type` : Types de contrat (CDI, CDD, etc.).
+*   `--skip-minio` : Désactive l'upload vers le Data Lake.
 
 **HelloWork -> MinIO :**
 ```bash
-python src/hellowork_scraper.py --query "data" --max-pages 2
+python src/hellowork_scraper.py 
 ```
-*Sortie : `data/raw/hellowork_offers.json` + Upload MinIO (`raw-scrap`)*
+*   `--query` : Terme de recherche (prioritaire sur `JOB_SEARCH_QUERY`).
+*   `--location` : Ville ou département.
+*   `--max-pages` : Nombre maximum de pages à scraper.
+*   `--skip-minio` : Désactive l'upload vers le Data Lake.
 
 ### 5.2 Transformation (Silver Layer)
 Fusion et nettoyage des données :
